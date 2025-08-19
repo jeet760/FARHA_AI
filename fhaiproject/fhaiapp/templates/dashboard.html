@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nutri Tracks — Agri-Nutrition Delivery Dashboard</title>
+
+  <!-- Tailwind (dev CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* small helpers */
+    .card { @apply bg-white shadow rounded-lg p-4; }
+    .kpi { @apply text-2xl font-semibold; }
+    /* heat color ramp */
+    .heat-0 { background: #f8fafc } /* very light */
+    .heat-1 { background: #dbeafe } /* light */
+    .heat-2 { background: #93c5fd } /* medium */
+    .heat-3 { background: #3b82f6 } /* strong */
+    .heat-4 { background: #1e40af; color: white } /* highest */
+  </style>
+</head>
+<body class="bg-[#FFF7ED] text-gray-800">
+  {% if messages %}
+    {% for message in messages %}
+    <script>
+        alert("{{ message|escapejs }}");
+    </script>
+    {% endfor %}
+  {% endif %}
+  <div x-data="nutritionDashboard()" x-init="init()" class="min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white border-b">
+      <div class="max-w-7xl mx-auto px-3 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div class="flex flex-col">
+          <a href="/" class="text-xl font-semibold">
+            Nutri<span class="text-[#FF9933]">Tracks</span>
+          </a>
+          <span class="text-sm font-bold text-gray-500">
+            Agri-Nutrition Delivery Dashboard
+          </span>
+        </div>
+
+
+        <!-- Filters -->
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <select x-model="user" @change="onConsumerTypeChange" class="rounded border px-3 py-1 text-sm">
+            <option value="">Select Consumer Type</option>
+            <template x-for="u in userList" :key="u.code">
+              <option :value="u.code" x-text="u.name"></option>
+            </template>
+          </select>
+
+          <select x-model="state" @change="onStateChange" class="rounded border px-3 py-1 text-sm">
+            <template x-for="s in stateList" :key="s.code">
+              <option :value="s.code" x-text="s.name"></option>
+            </template>
+          </select>
+
+          <select x-model="district" @change="onDistrictChange" class="rounded border px-3 py-1 text-sm">
+            <option value="">Select District</option>
+            <template x-for="d in districtList" :key="d.code">
+              <option :value="d.code" x-text="d.name"></option>
+            </template>
+          </select>
+
+          <select x-model="subdistrict" @change="onSubdistrictChange" class="rounded border px-3 py-1 text-sm">
+            <option value="">Select Sub-district</option>
+            <template x-for="sd in subdistrictList" :key="sd.code">
+              <option :value="sd.code" x-text="sd.name"></option>
+            </template>
+          </select>
+
+          <button @click="applyFilters" class="ml-2 bg-[#047857] text-white px-3 py-1 rounded text-sm">Apply</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Left column: KPI cards -->
+      <section class="lg:col-span-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Card 1 -->
+        <div class="card bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">No. of Schools Served</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.schools">0</div>
+          <!-- <div class="text-sm opacity-80 mt-1" x-text="'Coverage: ' + kpi.coverage + '%'"></div> -->
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card bg-gradient-to-r from-slate-400 to-slate-500 text-white rounded-2xl shadow-lg p-5">
+          <div class="consumerType text-xs uppercase tracking-wide opacity-90">Consumers Reached</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.beneficiaries">0</div>
+          <!-- <div class="text-sm opacity-80 mt-1" x-text="'Coverage: ' + kpi.coverage + '%'"></div> -->
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card bg-gradient-to-r from-sky-100 to-sky-200 text-gray-800 rounded-2xl shadow-lg p-5">
+          <div class="student_I_V text-xs uppercase tracking-wide opacity-90">Students: I to V</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.beneficiaries_i_v">0</div>
+          <!-- <div class="text-sm opacity-80 mt-1" x-text="'Coverage: ' + kpi.coverage + '%'"></div> -->
+        </div>
+
+        <!-- Card 4 -->
+        <div class="card bg-gradient-to-r from-indigo-100 to-indigo-200 text-gray-800 rounded-2xl shadow-lg p-5">
+          <div class="student_I_V text-xs uppercase tracking-wide opacity-90">Students: VI to X</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.beneficiaries_vi_x">0</div>
+          <!-- <div class="text-sm opacity-80 mt-1" x-text="'Coverage: ' + kpi.coverage + '%'"></div> -->
+        </div>
+
+        <!-- Card 5 -->
+        <div class="card bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">Total Calories Delivered (kcal)</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.energy">0</div>
+          <div class="text-sm opacity-80 mt-1" x-text="'Per beneficiary: ' + kpi.energy_per_beneficiary + ' kcal'"></div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="card bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">Total Carbohydrates Delivered (g)</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.carb">0</div>
+          <div class="text-sm opacity-80 mt-1" x-text="'Per beneficiary: ' + kpi.carb_per_beneficiary + ' g'"></div>
+        </div>
+
+        <!-- Card 7 -->
+        <div class="card bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">Total Protein Delivered (g)</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.protein">0</div>
+          <div class="text-sm opacity-80 mt-1" x-text="'Per beneficiary: ' + kpi.protein_per_beneficiary + ' g'"></div>
+        </div>
+
+        <!-- Card 8 -->
+        <div class="card bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">Total Fat Delivered (g)</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.fat">0</div>
+          <div class="text-sm opacity-80 mt-1" x-text="'Per beneficiary: ' + kpi.fat_per_beneficiary + ' g'"></div>
+        </div>
+
+        <!-- Card 9 -->
+        <div class="card bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-90">Total Fibre Delivered (g)</div>
+          <div class="kpi text-2xl font-bold mt-2" x-text="kpi.fibre">0</div>
+          <div class="text-sm opacity-80 mt-1" x-text="'Per beneficiary: ' + kpi.fibre_per_beneficiary + ' g'"></div>
+        </div>
+
+        <!-- Card 10 -->
+        <div class="card bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-2xl shadow-lg p-5">
+          <div class="text-xs uppercase tracking-wide opacity-70">Top contributing item</div>
+          <div class="text-lg font-medium mt-1" x-text="kpi.top_item"></div>
+          <div class="text-sm opacity-70" x-text="'Qty: ' + kpi.top_item_qty"></div>
+        </div>
+
+        <!-- Card 11 -->
+        <div class="card bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-2xl shadow-lg p-5">
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Alerts</div>
+          <ul class="mt-2 text-sm text-red-600 list-disc list-inside">
+            <template x-for="a in alerts" :key="a">
+              <li x-text="a"></li>
+            </template>
+            <template x-if="alerts.length === 0">
+              <li class="text-gray-500">No alerts</li>
+            </template>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Right: charts & maps -->
+      <section class="lg:col-span-3 space-y-4">
+        <!-- Spider web charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Radar: RDA coverage for Primary (i-v) -->
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="font-medium mb-2">MDM/PM-POSHAN Nutrition Chart (Calories)</div>
+            <div class="h-64">
+              <canvas id="nutrientBar_calories"></canvas>
+              <span style="font-size: smaller;"><em><sup>*</sup>Including calories from 100 grams and 150 grams of rice served through PDS to students of Class I to V and Class VI to X respectively. </em></span>
+            </div>
+          </div>
+          <!-- Radar: RDA coverage for Upper primary (vi-x) -->
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="font-medium mb-2">MDM/PM-POSHAN Nutrition Chart (Protein)</div>
+            <div class="h-64">
+              <canvas id="nutrientBar_protein"></canvas>
+              <span style="font-size: smaller;"><em><sup>*</sup>Including protein from 100 grams and 150 grams of rice served through PDS to students of Class I to V and Class VI to X respectively. </em></span>
+            </div>
+          </div>  
+
+          <!-- Radar: RDA coverage -->
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="font-medium mb-2">Nutrition Coverage (%) — Macro nutrients</div>
+            <div class="h-64">
+              <canvas id="rdaRadar_macro"></canvas>
+            </div>
+          </div>
+
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="font-medium mb-2">Nutrition Coverage (%) — Vitamins</div>
+            <div class="h-64">
+              <canvas id="rdaRadar_micro_vitamins"></canvas>
+            </div>
+          </div>
+
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="font-medium mb-2">Nutrition Coverage (%) — Minerals</div>
+            <div class="h-64">
+              <canvas id="rdaRadar_micro_minerals"></canvas>
+            </div>
+          </div>
+
+          <!-- Stacked bar: nutrient contribution -->
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="flex justify-between items-center mb-2">
+              <div class="font-medium">Nutrient contribution by food group (per 100g)</div>
+              <div class="text-xs text-gray-500">Protein / Carbs / Fat / Fibre</div>
+            </div>
+            <div class="h-64">
+              <canvas id="nutrientBar"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top charts row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Stacked bar: nutrient contribution -->
+          <!-- <div class="card">
+            <div class="flex justify-between items-center mb-2">
+              <div class="font-medium">Nutrient contribution by food group (per 100g)</div>
+              <div class="text-xs text-gray-500">Protein / Carbs / Fat / Fibre</div>
+            </div>
+            <div class="h-64">
+              <canvas id="nutrientBar"></canvas>
+            </div>
+          </div> -->
+        </div>
+
+        <!-- Trend and coverage -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="flex justify-between items-center mb-2">
+              <div class="font-medium">Trend (Total Qty & Energy)</div>
+              <div>
+                <select x-model="timeWindow" @change="drawTrend" class="border px-2 py-1 rounded text-sm">
+                  <option value="7">7 days</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                </select>
+              </div>
+            </div>
+            <div class="h-64">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card bg-gray-50 rounded-2xl shadow-lg p-5">
+            <div class="flex items-center justify-between mb-2">
+              <div class="font-medium">Coverage heatmap (district level)</div>
+              <div class="text-xs text-gray-500">Click a cell to drill</div>
+            </div>
+
+            <!-- Simple heatgrid (replace with real geo-choropleth later) -->
+            <div class="grid grid-cols-4 gap-2">
+              <template x-for="c in coverageGrid" :key="c.code">
+                <button @click="onCellClick(c)" class="p-3 rounded text-sm text-center"
+                        :class="heatClass(c.score)">
+                  <div class="font-semibold" x-text="c.name"></div>
+                  <div class="text-xs" x-text="c.score + '%'"></div>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Procurement & stock -->
+        <!-- <div class="card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-medium">Procurement & Stock</div>
+            <div class="flex items-center gap-2">
+              <button @click="exportProcurementCSV" class="bg-sky-600 text-white px-3 py-1 rounded text-sm">Export CSV</button>
+              <button @click="exportProcurementJSON" class="bg-gray-700 text-white px-3 py-1 rounded text-sm">Export JSON</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-left text-xs text-gray-600 uppercase">
+                <tr>
+                  <th class="px-2 py-2">Commodity</th>
+                  <th class="px-2 py-2">Procured (kg)</th>
+                  <th class="px-2 py-2">Distributed (kg)</th>
+                  <th class="px-2 py-2">Stock (kg)</th>
+                  <th class="px-2 py-2">Cost (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="p in procurement" :key="p.commodity">
+                  <tr class="border-t">
+                    <td class="px-2 py-2" x-text="p.commodity"></td>
+                    <td class="px-2 py-2" x-text="p.procured"></td>
+                    <td class="px-2 py-2" x-text="p.distributed"></td>
+                    <td class="px-2 py-2" x-text="p.stock"></td>
+                    <td class="px-2 py-2" x-text="p.cost_formatted"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div> -->
+
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-6 py-4 text-sm text-gray-500">
+      Powered by FarHa AI | Nutrition Dashboard prototype
+    </footer>
+  </div>
+
+  <!-- Dashboard script (Alpine component + Chart setup with dummy data) -->
+  <script>
+  function nutritionDashboard() {
+    return {
+      // Filters
+      user:'',
+      state: '',
+      district: '',
+      subdistrict: '',
+      timeWindow: '30',
+
+      // Lists (replace INITIAL_* with server values or populate via API)
+      stateList: JSON.parse('{{ states|safe }}').map(([code, name]) => ({ code, name })),
+      userList: [
+        { name: 'Schools', code: 1 },
+        { name: 'Others', code: 2 },
+        { name: 'All', code: 3 }
+      ],
+      districtList: [],
+      subdistrictList: [],
+      
+      // Dashboard data (dummy)
+      kpi: { 
+        schools : JSON.parse('{{no_of_schools|safe|escapejs}}'),
+        beneficiaries: JSON.parse('{{ no_of_students|safe|escapejs }}'), 
+        beneficiaries_i_v: JSON.parse('{{ no_of_students_i_v|safe|escapejs }}'), 
+        beneficiaries_vi_x: JSON.parse('{{ no_of_students_vi_x|safe|escapejs }}'), 
+        coverage: 92, 
+        energy: parseFloat(JSON.parse('{{ total_calories|safe|escapejs }}')).toFixed(2), 
+        energy_per_beneficiary: parseFloat(JSON.parse('{{ unit_calories|safe|escapejs }}')).toFixed(2), 
+        carb:parseFloat(JSON.parse('{{ total_carb_content|safe|escapejs }}')).toFixed(2), 
+        carb_per_beneficiary: parseFloat(JSON.parse('{{ unit_carb_content|safe|escapejs }}')).toFixed(2),
+        protein: parseFloat(JSON.parse('{{ total_protein_content|safe|escapejs }}')).toFixed(2), 
+        protein_per_beneficiary: parseFloat(JSON.parse('{{ unit_protein_content|safe|escapejs }}')).toFixed(2), 
+        fat:parseFloat(JSON.parse('{{ total_fat_content|safe|escapejs }}')).toFixed(2), 
+        fat_per_beneficiary: parseFloat(JSON.parse('{{ unit_fat_content|safe|escapejs }}')).toFixed(2), 
+        fibre:parseFloat(JSON.parse('{{ total_fibre_content|safe|escapejs }}')).toFixed(2), 
+        fibre_per_beneficiary: parseFloat(JSON.parse('{{ unit_fibre_content|safe|escapejs }}')).toFixed(2), 
+        protein_per_meal: 12, 
+        budget_spent_formatted: '₹ 12,34,567', 
+        budget_utilization: 78, 
+        top_item: 'Vegetables', 
+        top_item_qty: 0 
+      },
+      alerts: [],
+      procurement: [
+        { commodity: 'Rice', procured: 5400, distributed: 4800, stock: 600, cost: 250000, cost_formatted: '₹ 250,000' },
+        { commodity: 'Wheat', procured: 7200, distributed: 7000, stock: 200, cost: 300000, cost_formatted: '₹ 300,000' },
+        { commodity: 'Pulses', procured: 1200, distributed: 1000, stock: 200, cost: 90000, cost_formatted: '₹ 90,000' }
+      ],
+
+      // Coverage grid dummy (districts)
+      coverageGrid: [
+        { code: 'D1', name: 'Dist A', score: 95 },
+        { code: 'D2', name: 'Dist B', score: 78 },
+        { code: 'D3', name: 'Dist C', score: 62 },
+        { code: 'D4', name: 'Dist D', score: 45 },
+        { code: 'D5', name: 'Dist E', score: 88 },
+        { code: 'D6', name: 'Dist F', score: 52 },
+        { code: 'D7', name: 'Dist G', score: 33 },
+        { code: 'D8', name: 'Dist H', score: 15 }
+      ],
+
+      // Chart instances
+      charts: { nutrientBar: null, rdaRadar: null, trend: null },
+
+      // init
+      async init() {
+        // If you have server-side lists, you can assign them here:
+        // this.stateList = JSON.parse(document.getElementById('states-json').textContent);
+
+        // Load real data here if needed (placeholder)
+        await this.loadData();
+
+        // Prepare charts
+        this.setupCharts();
+        this.drawAll();
+      },
+
+      // Placeholder loadData: replace with your API calls to aggregate nutrient info
+      async loadData() {
+        // Example: set alerts if protein_per_meal < desired threshold
+        if (this.kpi.protein_per_meal < 12) {
+          this.alerts.push('Protein per meal below standard: ' + this.kpi.protein_per_meal + ' g');
+        }
+      },
+
+      /***** Filters & cascading selects *****/
+      onConsumerTypeChange(){
+        if (this.user === '1') {
+          //document.querySelectorAll('.consumerType').forEach(el => el.innerHTML = 'Beneficiaries served');
+          document.querySelector('.consumerType').innerHTML = 'Beneficiaries served';
+        } else {
+          document.querySelector('.consumerType').innerHTML = 'Consumers Reached';
+        }
+      },
+
+      onStateChange() {
+        this.districtList.length = 0; // clear previous selections
+        this.districtList = [];
+        this.subdistrictList = [];
+        this.district = '';
+        this.subdistrict = '';
+
+        if (!this.state) return; // no state selected
+
+        const api = `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=579b464db66ec23bdd0000011c8e390297d348f14342ed5a091d6a99&format=json&limit=1000&filters%5Bstate_code%5D=${this.state}`;
+        
+        fetch(api)
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data.records)) {
+                this.districtList = data.records
+                    .sort((a, b) => a.district_name_english.localeCompare(b.district_name_english))
+                    .map(rec => ({
+                        code: rec.district_code,
+                        name: rec.district_name_english
+                    }));
+            } else {
+                console.error("Expected 'records' to be an array.");
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching district data:', error);
+        });
+      },
+
+      onDistrictChange() {
+        this.subdistrictList = [];
+        this.subdistrict = '';
+
+        if (!this.state || !this.district) return; // both needed
+
+        const api = `https://api.data.gov.in/resource/6be51a29-876a-403a-a6da-42fde795e751?api-key=579b464db66ec23bdd0000011c8e390297d348f14342ed5a091d6a99&format=json&limit=1000&filters%5Bstate_code%5D=${this.state}&filters%5Bdistrict_code%5D=${this.district}`;
+
+        fetch(api)
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data.records)) {
+                    this.subdistrictList = data.records
+                        .sort((a, b) => a.subdistrict_name_english.localeCompare(b.subdistrict_name_english))
+                        .map(rec => ({
+                            code: rec.subdistrict_code,
+                            name: rec.subdistrict_name_english
+                        }));
+                } else {
+                    console.error("Expected 'records' to be an array.");
+                    this.subdistrictList = [];
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching subdistrict data:", error);
+                this.subdistrictList = [];
+            });
+      },
+
+      onSubdistrictChange() {
+        // You can call loadData/refresh charts filtered by selection
+      },
+
+      applyFilters() {
+        // Re-fetch / re-aggregate data based on state/district/subdistrict selection
+        // Placeholder: push sample alert
+        if (this.state && !this.district) {
+          this.alerts.push('Showing aggregated data for state ' + this.state);
+        }
+        this.refresh();
+      },
+
+      onCellClick(cell) {
+        // Drill-down triggered by clicking heatgrid cell
+        alert('Drill to ' + cell.name + ' (' + cell.code + '): coverage ' + cell.score + '%');
+      },
+
+      heatClass(score) {
+        if (score >= 85) return 'heat-4';
+        if (score >= 70) return 'heat-3';
+        if (score >= 50) return 'heat-2';
+        if (score >= 30) return 'heat-1';
+        return 'heat-0';
+      },
+
+      /***** Charts setup (fixed heights => no vertical exploding) *****/
+      setupCharts() {
+        // Nutrient stacked bar
+        const barCtx = document.getElementById('nutrientBar').getContext('2d');
+        const labels = JSON.parse('{{ food_cat_summary_labels|safe }}');//['Cereals', 'Pulses', 'Vegetables', 'Milk', 'Oils'];
+        const proteinData = JSON.parse('{{ food_cat_total_protein_list|safe }}');
+        const carbsData = JSON.parse('{{ food_cat_total_carb_list|safe }}');
+        const fatData = JSON.parse('{{ food_cat_total_fat_list|safe }}');
+        const fibreData = JSON.parse('{{ food_cat_total_fiber_list|safe }}');
+
+        this.charts.nutrientBar = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Protein (g)', data: proteinData, backgroundColor: '#10B981' },
+              { label: 'Carbs (g)', data: carbsData, backgroundColor: '#3B82F6' },
+              { label: 'Fat (g)', data: fatData, backgroundColor: '#F59E0B' },
+              { label: 'Fibre (g)', data: fibreData, backgroundColor: '#FFF000' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { stacked: true }, y: { stacked: true } }
+          }
+        });
+
+        //bullet chart for the calories
+        const barCtx_calories = document.getElementById('nutrientBar_calories').getContext('2d');
+        new Chart(barCtx_calories, {
+          type: 'bar',
+          data: {
+            labels: [
+              "Total Calories (Class I-V)",
+              "Avg Calories (Class I-V)",
+              "Total Calories (Class VI-X)",
+              "Avg Calories (Class VI-X)"
+            ],
+            datasets: [
+              {
+                label: "Target Calories",
+                data: JSON.parse('{{mdm_target_calories_data|safe}}'), // Example targets
+                backgroundColor: "rgba(209,213,219,1)", // gray for target
+                borderRadius: 10,
+              },
+              {
+                label: "Achieved Calories",
+                data: JSON.parse('{{mdm_achieved_calories_data|safe}}'), // Example achieved
+                backgroundColor: "rgba(59,130,246,1)", // blue for achieved
+                borderRadius: 10,
+                barPercentage: 0.5 // thinner bar overlaying target
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y', // horizontal bars
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: true
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Calories"
+                }
+              },
+              y: {
+                ticks: {
+                  font: { size: 12 }
+                }
+              }
+            }
+          }
+        });
+
+        //bullet chart for the protein
+        const barCtx_protein = document.getElementById('nutrientBar_protein').getContext('2d');
+        new Chart(barCtx_protein, {
+          type: 'bar',
+          data: {
+            labels: [
+              "Total Calories (Class I-V)",
+              "Avg Calories (Class I-V)",
+              "Total Calories (Class VI-X)",
+              "Avg Calories (Class VI-X)"
+            ],
+            datasets: [
+              {
+                label: "Target Protein",
+                data: JSON.parse('{{mdm_target_protein_data|safe}}'), // Example targets
+                backgroundColor: "rgba(209,213,219,1)", // gray for target
+                borderRadius: 10,
+              },
+              {
+                label: "Achieved Protein",
+                data: JSON.parse('{{mdm_achieved_protein_data|safe}}'), // Example achieved
+                backgroundColor: "rgba(59,130,246,1)", // blue for achieved
+                borderRadius: 10,
+                barPercentage: 0.5 // thinner bar overlaying target
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y', // horizontal bars
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: true
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Calories"
+                }
+              },
+              y: {
+                ticks: {
+                  font: { size: 12 }
+                }
+              }
+            }
+          }
+        });
+
+
+        // RDA radar macro
+        const radCtx_macro = document.getElementById('rdaRadar_macro').getContext('2d');
+        this.charts.rdaRadar = new Chart(radCtx_macro, {
+          type: 'radar',
+          data: {
+            labels: JSON.parse('{{ rda_macro_labels|safe }}'),
+            datasets: [{
+              label: 'RDA coverage (%)',
+              data: JSON.parse('{{ rda_macro_coverage|safe }}'),
+              backgroundColor: 'rgba(59,130,246,0.15)',
+              borderColor: 'rgba(59,130,246,1)',
+              pointBackgroundColor: 'rgba(59,130,246,1)'
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // RDA radar micro vitamins
+        const radCtx_micro_vitamins = document.getElementById('rdaRadar_micro_vitamins').getContext('2d');
+        this.charts.rdaRadar = new Chart(radCtx_micro_vitamins, {
+          type: 'radar',
+          data: {
+            labels: JSON.parse('{{ rda_micro_labels_vitamins|safe }}'),
+            datasets: [{
+              label: 'RDA coverage (%)',
+              data: JSON.parse('{{ rda_micro_coverage_vitamins|safe }}'),
+              backgroundColor: 'rgba(59,130,246,0.15)',
+              borderColor: 'rgba(59,130,246,1)',
+              pointBackgroundColor: 'rgba(59,130,246,1)'
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // RDA radar
+        const radCtx_micro_minerals = document.getElementById('rdaRadar_micro_minerals').getContext('2d');
+        this.charts.rdaRadar = new Chart(radCtx_micro_minerals, {
+          type: 'radar',
+          data: {
+            labels: JSON.parse('{{ rda_micro_labels_minerals|safe }}'),
+            datasets: [{
+              label: 'RDA coverage (%)',
+              data: JSON.parse('{{ rda_micro_coverage_minerals|safe }}'),
+              backgroundColor: 'rgba(59,130,246,0.15)',
+              borderColor: 'rgba(59,130,246,1)',
+              pointBackgroundColor: 'rgba(59,130,246,1)'
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Trend chart
+        const tCtx = document.getElementById('trendChart').getContext('2d');
+        this.charts.trend = new Chart(tCtx, {
+          type: 'line',
+          data: {
+            labels: [], datasets: [
+              { label: 'Total Qty (kg)', data: [], borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.08)' },
+              { label: 'Energy (kcal)', data: [], borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.08)' }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      },
+
+      drawAll() {
+        this.drawTrend();
+        this.updateBarAndRadar();
+      },
+
+      updateBarAndRadar() {
+        // Update with dynamic data if available. For prototype, keep sample values
+        if (this.charts.nutrientBar) this.charts.nutrientBar.update();
+        if (this.charts.rdaRadar) this.charts.rdaRadar.update();
+      },
+
+      drawTrend() {
+        if (!this.charts.trend) return;
+        const days = Number(this.timeWindow);
+        const labels = [];
+        const qty = [];
+        const energy = [];
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          labels.push(d.toISOString().slice(0, 10));
+          qty.push(Math.round(Math.random() * 100 + 50));
+          energy.push(Math.round(Math.random() * 200 + 200));
+        }
+        this.charts.trend.data.labels = labels;
+        this.charts.trend.data.datasets[0].data = qty;
+        this.charts.trend.data.datasets[1].data = energy;
+        this.charts.trend.update();
+      },
+
+      /***** Actions: refresh/export *****/
+      async refresh() {
+        // Recompute KPI and re-draw charts. In real app fetch filtered aggregates here.
+        await this.loadData();
+        this.drawAll();
+      },
+
+      exportProcurementCSV() {
+        const header = ['commodity', 'procured', 'distributed', 'stock', 'cost'];
+        const rows = this.procurement.map(p => [p.commodity, p.procured, p.distributed, p.stock, p.cost]);
+        const csv = header.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'procurement.csv';
+        link.click();
+      },
+
+      exportProcurementJSON() {
+        const blob = new Blob([JSON.stringify(this.procurement, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'procurement.json';
+        link.click();
+      }
+    };
+  }
+  </script>
+
+</body>
+</html>

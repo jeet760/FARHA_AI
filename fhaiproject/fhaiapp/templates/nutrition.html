@@ -1,0 +1,49 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block nutrition %}
+    <section class="py-12 bg-gray-50">
+      <div class="max-w-8xl mx-auto px-8">
+        <div class="bg-white shadow-md rounded-lg p-8">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-6">Nutrition Derlivered</h2>
+          <table id="orderTable" class="w-full text-left text-sm border border-gray-300 bg-white">
+            <thead class="text-gray-700 border-b border-gray-300">
+                <tr>
+                    <th class="py-2 px-3 cursor-pointer">#</th>
+                    <th class="py-2 px-3 cursor-pointer">School Name</th>
+                    <th class="py-2 px-3 cursor-pointer">No. of Students</th>
+                    <th class="py-2 px-3 cursor-pointer">Total Protein Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Total Fat Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Total Fibre Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Total Carbohydrate Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Total Calories Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Unit Protein Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Unit Fat Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Unit Fibre Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Unit Carbohydrate Content</th>
+                    <th class="py-2 px-3 cursor-pointer">Unit Calories Content</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in api_data %}
+                <tr class="border-b border-gray-300 hover:bg-gray-100" data-status="{{order.orderStatus}}">
+                    <td class="py-2 px-3">{{forloop.counter}}</td>
+                    <td class="py-2 px-3">{{data.first_name}}</td>
+                    <td class="py-2 px-3">{{no_of_students}}</td>
+                    <td class="py-2 px-3">{{total_protein_content}}</td>
+                    <td class="py-2 px-3">{{total_fat_content}}</td>
+                    <td class="py-2 px-3">{{total_fibre_content}}</td>
+                    <td class="py-2 px-3">{{total_carb_content}}</td>
+                    <td class="py-2 px-3">{{total_calories}}</td>
+                    <td class="py-2 px-3">{{unit_protein_content}}</td>
+                    <td class="py-2 px-3">{{unit_fat_content}}</td>
+                    <td class="py-2 px-3">{{unit_fibre_content}}</td>
+                    <td class="py-2 px-3">{{unit_carb_content}}</td>
+                    <td class="py-2 px-3">{{unit_calories}}</td>
+                </tr>
+                {%endfor%}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+{% endblock %}

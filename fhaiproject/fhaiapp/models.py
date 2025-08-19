@@ -1,0 +1,476 @@
+from django.db import models
+from django.db.models import AutoField, CharField, TextField, FloatField, ForeignKey, CASCADE
+
+#Food category Map
+class FoodCategoryMap(models.Model):
+    id=AutoField(primary_key=True)
+    farha_category = CharField(max_length=100, blank=True, null=True)
+    ifct_category = CharField(max_length=100, blank=True, null=True)
+    category_code = CharField(max_length=3, unique=True, blank=True, null=True)  # Indian Food Composition Tables code
+
+    def __str__(self):
+        return f'{self.farha_category}, {self.ifct_category}'
+
+#Nutritent Reference Unit (gram, milligram, microgram, etc.)
+class NutritentReferenceUnit(models.Model):
+    id = AutoField(primary_key=True)
+    nutrient = CharField(max_length=20, unique=True)
+    unit = CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.nutrient}, {self.unit}'
+
+#Food model (Food item like Potato, Rice, etc.)
+class Food(models.Model):
+    id = AutoField(primary_key=True)
+    food_code = CharField(max_length=50, unique=True)
+    food_name = CharField(max_length=255)
+    scientific_name = CharField(max_length=255, blank=True, null=True)
+    ifct_category = CharField(max_length=100, blank=True, null=True)  # Indian Food Composition Tables category
+    farha_category = CharField(max_length=100, blank=True, null=True)  # Your custom category
+    collection_place = CharField(max_length=100, blank=True, null=True)  # Collection place category
+    description = TextField(blank=True, null=True)  # Your custom category
+
+    def __str__(self):
+        return f'{self.food_name} ({self.food_code})'
+
+#Food Dietary Fibre
+class DietaryFibre(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_dietary_fibre')
+    food_code = CharField(max_length=50, unique=True)
+    water = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Content')
+    water_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Content Deviation')
+    protcnt = FloatField(blank=True, null=True, default=0.0, verbose_name='Protein Content')
+    protcnt_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Protein Content Standard Deviation')
+    ash = FloatField(blank=True, null=True, default=0.0, verbose_name='Ash Content')
+    ash_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Ash Content Standard Deviation')
+    fatce = FloatField(blank=True, null=True, default=0.0, verbose_name='Fat Content')
+    fatce_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Fat Content Standard Deviation')
+    fibtg = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Dietary Fibre')
+    fibtg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Dietary Fibre Standard Deviation')
+    fibins = FloatField(blank=True, null=True, default=0.0, verbose_name='Insoluble Dietary Fibre')
+    fibins_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Insoluble Dietary Fibre Standard Deviation')
+    fibsol = FloatField(blank=True, null=True, default=0.0, verbose_name='Soluble Dietary Fibre')
+    fibsol_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Soluble Dietary Fibre Standard Deviation')
+    choavldf = FloatField(blank=True, null=True, default=0.0, verbose_name='Available Carbohydrates')
+    choavldf_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Available Carbohydrates Standard Deviation')
+    enerc = FloatField(blank=True, null=True, default=0.0, verbose_name='Energy Content')
+    enerc_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Energy Content Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+    
+#Food with water soluble vitamins
+class WaterSolubleVitamins(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_vitamin_w')
+    food_code = CharField(max_length=50, unique=True)
+    thia = FloatField(blank=True, null=True, default=0.0, verbose_name='Thiamine (Vitamin B1)')
+    thia_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Thiamine Standard Deviation')
+    ribf = FloatField(blank=True, null=True, default=0.0, verbose_name='Riboflavin')    
+    ribf_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Riboflavin Standard Deviation')
+    nia = FloatField(blank=True, null=True, default=0.0, verbose_name='Niacin')
+    nia_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Niacin Standard Deviation')
+    pantac = FloatField(blank=True, null=True, default=0.0, verbose_name='Pantothenic Acid')
+    pantac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Pantothenic Acid Standard Deviation')
+    vitb6a = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin B6')
+    vitb6a_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin B6 Standard Deviation')
+    biot = FloatField(blank=True, null=True, default=0.0, verbose_name='Biotin')
+    biot_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Biotin Standard Deviation')
+    folsum = FloatField(blank=True, null=True, default=0.0, verbose_name='Folic Acid')
+    folsum_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Folic Acid Standard Deviation')
+    vitc = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin C')
+    vitc_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin C Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with fat soluble vitamins
+class FatSolubleVitamins(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_vitamin_f')
+    food_code = CharField(max_length=50, unique=True)
+    ergcal = FloatField(blank=True, null=True, default=0.0, verbose_name='Ergocalciferol (Vitamin D2)')
+    ergcal_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Ergocalciferol Standard Deviation')
+    tocpha = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol (Vitamin E)')
+    tocpha_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol Standard Deviation')
+    tocphb = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol B (Vitamin E)')
+    tocphb_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol B Standard Deviation')
+    tocphg = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol G (Vitamin E)')
+    tocphg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol G Standard Deviation')
+    tocphd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol D (Vitamin E)')
+    tocphd_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocopherol D Standard Deviation')
+    toctra = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol A (Vitamin E)')
+    toctra_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol A Standard Deviation')
+    toctrb = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol B (Vitamin E)')
+    toctrb_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol B Standard Deviation')
+    toctrg = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol G (Vitamin E)')
+    toctrg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol G Standard Deviation')
+    toctrd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol D (Vitamin E)')
+    toctrd_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tocotrienol D Standard Deviation')
+    vite = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin E')
+    vite_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin E Standard Deviation')
+    vitk1 = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin K1')
+    vitk1_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin K1 Standard Deviation')
+    retol = FloatField(blank=True, null=True, default=0.0, verbose_name='Retinol (Vitamin A)')
+    retol_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Retinol Standard Deviation')
+    chocal = FloatField(blank=True, null=True, default=0.0, verbose_name='Cholecalciferol (Vitamin D3)')
+    chocal_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cholecalciferol Standard Deviation')
+    hychocal = FloatField(blank=True, null=True, default=0.0, verbose_name='HydroxyCholecalciferol (Vitamin D3)')
+    hychocal_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='HydroxyCholecalciferol (Vitamin D3) Standard Deviation')
+    vitk2 = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin K2')
+    vitk2_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vitamin K2 Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with Carotenoids
+class Carotenoids(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_carotenoid')
+    food_code = CharField(max_length=50, unique=True)
+    lutn = FloatField(blank=True, null=True, default=0.0, verbose_name='Lutein')
+    lutn_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Lutein Standard Deviation')
+    zea = FloatField(blank=True, null=True, default=0.0, verbose_name='Zeaxanthin')
+    zea_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Zeaxanthin Standard Deviation')
+    lycpn = FloatField(blank=True, null=True, default=0.0, verbose_name='Lycopene')
+    lycpn_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Lycopene Standard Deviation')
+    crypxb = FloatField(blank=True, null=True, default=0.0, verbose_name='Cryptoxanthin')
+    crypxb_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cryptoxanthin Standard Deviation')
+    cartg = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene G')
+    cartg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene G Standard Deviation')
+    carta = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene A')
+    carta_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene A Standard Deviation')
+    cartb = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene B')
+    cartb_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Carotene B Standard Deviation')
+    cartoid = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Carotenoids')
+    cartoid_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Carotenoids Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with Minerals and trace elements
+class MineralsAndTraceElements(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_minerals')
+    food_code = CharField(max_length=50, unique=True)
+    al = FloatField(blank=True, null=True, default=0.0, verbose_name='Aluminum')
+    al_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Aluminum Standard Deviation')
+    As = FloatField(blank=True, null=True, default=0.0, verbose_name='Arsenic')
+    As_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Arsenic Standard Deviation')
+    cd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cadmium')
+    cd_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cadmium Standard Deviation')
+    ca = FloatField(blank=True, null=True, default=0.0, verbose_name='Calcium')
+    ca_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Calcium Standard Deviation')
+    cr = FloatField(blank=True, null=True, default=0.0, verbose_name='Chromium')
+    cr_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Chromium Standard Deviation')
+    co = FloatField(blank=True, null=True, default=0.0, verbose_name='Cobalt')
+    co_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cobalt Standard Deviation')
+    cu = FloatField(blank=True, null=True, default=0.0, verbose_name='Copper')
+    cu_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Copper Standard Deviation')
+    fe = FloatField(blank=True, null=True, default=0.0, verbose_name='Iron')
+    fe_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Iron Standard Deviation')
+    pb = FloatField(blank=True, null=True, default=0.0, verbose_name='Lead')
+    pb_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Lead Standard Deviation')
+    li = FloatField(blank=True, null=True, default=0.0, verbose_name='Lithium')
+    li_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Lithium Standard Deviation')
+    mg = FloatField(blank=True, null=True, default=0.0, verbose_name='Magnesium')
+    mg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Magnesium Standard Deviation')
+    mn = FloatField(blank=True, null=True, default=0.0, verbose_name='Manganese')
+    mn_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Manganese Standard Deviation')
+    hg = FloatField(blank=True, null=True, default=0.0, verbose_name='Mercury')
+    hg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Mercury Standard Deviation')
+    mo = FloatField(blank=True, null=True, default=0.0, verbose_name='Molybdenum')
+    mo_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Molybdenum Standard Deviation')
+    ni = FloatField(blank=True, null=True, default=0.0, verbose_name='Nickel')
+    ni_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Nickel Standard Deviation')
+    p = FloatField(blank=True, null=True, default=0.0, verbose_name='Phosphorus')
+    p_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Phosphorus Standard Deviation')
+    k = FloatField(blank=True, null=True, default=0.0, verbose_name='Potassium')
+    k_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Potassium Standard Deviation')
+    se = FloatField(blank=True, null=True, default=0.0, verbose_name='Selenium')
+    se_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Selenium Standard Deviation')
+    na = FloatField(blank=True, null=True, default=0.0, verbose_name='Sodium')
+    na_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Sodium Standard Deviation')
+    zn = FloatField(blank=True, null=True, default=0.0, verbose_name='Zinc')
+    zn_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Zinc Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with starch and sugars
+class StarchAndSugars(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_starch_sugar')
+    food_code = CharField(max_length=50, unique=True)
+    tacho = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Available Carbohydrates')
+    tacho_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Available Carbohydrates Standard Deviation')
+    starch = FloatField(blank=True, null=True, default=0.0, verbose_name='Starch')
+    starch_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Starch Standard Deviation')
+    frus = FloatField(blank=True, null=True, default=0.0, verbose_name='Fructose')
+    frus_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Fructose Standard Deviation')
+    glus = FloatField(blank=True, null=True, default=0.0, verbose_name='Glucose')
+    glus_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Glucose Standard Deviation')
+    sucs = FloatField(blank=True, null=True, default=0.0, verbose_name='Sucrose')
+    sucs_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Sucrose Standard Deviation')
+    mals = FloatField(blank=True, null=True, default=0.0, verbose_name='Maltose')
+    mals_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Maltose Standard Deviation')
+    tfs = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Free Sugars')
+    tfs_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Free Sugars Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with fatty acid
+class FattyAcid(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_fatty_acid')
+    food_code = CharField(max_length=50, unique=True)
+    f10d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C10:0 (Capric Acid)')
+    f10d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C10:0 Standard Deviation')
+    f12d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C12:0 (Lauric Acid)')
+    f12d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C12:0 Standard Deviation')
+    f14d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C14:0 (Myristic Acid)')
+    f14d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C14:0 Standard Deviation')
+    f16d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C16:0 (Palmitic Acid)')
+    f16d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C16:0 Standard Deviation')
+    f18d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:0 (Stearic Acid)')
+    f18d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:0 Standard Deviation')
+    f20d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:0 (Arachidic Acid)')
+    f20d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:0 Standard Deviation')
+    f22d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C22:0 (Behenic Acid)')
+    f22d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C22:0 Standard Deviation')
+    f24d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C24:0 (Lignoceric Acid)')
+    f24d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C24:0 Standard Deviation')
+    f14d1 = FloatField(blank=True, null=True, default=0.0, verbose_name='C14:1 (Myristoleic Acid)')
+    f14d1_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C14:1 Standard Deviation')
+    f16d1 = FloatField(blank=True, null=True, default=0.0, verbose_name='C16:1 (Palmitoleic Acid)')
+    f16d1_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C16:1 Standard Deviation')
+    f18d1n9 = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:1n9 (Oleic Acid)')
+    f18d1n9_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:1n9 Standard Deviation')
+    f20d1n9 = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:1n9 (Gadoleic Acid)')
+    f20d1n9_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:1n9 Standard Deviation')
+    f22d1n9 = FloatField(blank=True, null=True, default=0.0, verbose_name='C22:1n9 (Erucic Acid)')
+    f22d1n9_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C22:1n9 Standard Deviation')
+    f24d1n9 = FloatField(blank=True, null=True, default=0.0, verbose_name='C24:1n9 (Nervonic Acid)')
+    f24d1n9_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C24:1n9 Standard Deviation')
+    f18d2n6 = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:2n6 (Linoleic Acid)')
+    f18d2n6_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:2n6 Standard Deviation')
+    f20d2 = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:2 (Eicosadienoic Acid)')
+    f20d2_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:2 Standard Deviation')
+    f18d3n3 = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:3n3 (Alpha-Linolenic Acid)')
+    f18d3n3_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:3n3 Standard Deviation')
+    f20d4n6 = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:4n6 (Arachidonic Acid)')
+    f20d4n6_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C20:4n6 Standard Deviation')
+    f4d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C4:0 (Butyric Acid)')
+    f4d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C4:0 Standard Deviation')
+    f6d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C6:0 (Caproic Acid)')
+    f6d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C6:0 Standard Deviation')
+    f8d0 = FloatField(blank=True, null=True, default=0.0, verbose_name='C8:0 (Caprylic Acid)')
+    f8d0_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C8:0 Standard Deviation')
+    f18d1tn9 = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:1t9 (Elaidic Acid )')
+    f18d1tn9_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='C18:1t9 Standard Deviation')
+    fasat = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Saturated Fatty Acids')
+    fasat_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Saturated Fatty Acids Standard Deviation')
+    fams = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Monounsaturated Fatty Acids')
+    fams_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Monounsaturated Fatty Acids Standard Deviation')
+    fapu = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Polyunsaturated Fatty Acids')
+    fapu_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Polyunsaturated Fatty Acids Standard Deviation')
+    
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+    
+#Food with amino acid
+class AminoAcid(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_amino_acid')
+    food_code = CharField(max_length=50, unique=True)
+    his = FloatField(blank=True, null=True, default=0.0, verbose_name='Histidine')
+    his_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Histidine Standard Deviation')
+    ile = FloatField(blank=True, null=True, default=0.0, verbose_name='Isoleucine')
+    ile_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Isoleucine Standard Deviation')
+    leu = FloatField(blank=True, null=True, default=0.0, verbose_name='Leucine')
+    leu_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Leucine Standard Deviation')
+    lys = FloatField(blank=True, null=True, default=0.0, verbose_name='Lysine')
+    lys_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Lysine Standard Deviation')
+    met = FloatField(blank=True, null=True, default=0.0, verbose_name='Methionine')
+    met_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Methionine Standard Deviation')
+    cys = FloatField(blank=True, null=True, default=0.0, verbose_name='Cysteine')
+    cys_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cysteine Standard Deviation')
+    phe = FloatField(blank=True, null=True, default=0.0, verbose_name='Phenylalanine')
+    phe_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Phenylalanine Standard Deviation')
+    thr = FloatField(blank=True, null=True, default=0.0, verbose_name='Threonine')
+    thr_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Threonine Standard Deviation')
+    trp = FloatField(blank=True, null=True, default=0.0, verbose_name='Tryptophan')
+    trp_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tryptophan Standard Deviation')
+    val = FloatField(blank=True, null=True, default=0.0, verbose_name='Valine')
+    val_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Valine Standard Deviation')
+    ala = FloatField(blank=True, null=True, default=0.0, verbose_name='Alanine')
+    ala_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Alanine Standard Deviation')
+    arg = FloatField(blank=True, null=True, default=0.0, verbose_name='Arginine')
+    arg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Arginine Standard Deviation')
+    asp = FloatField(blank=True, null=True, default=0.0, verbose_name='Aspartic Acid')
+    asp_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Aspartic Acid Standard Deviation')
+    glu = FloatField(blank=True, null=True, default=0.0, verbose_name='Glutamic Acid')
+    glu_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Glutamic Acid Standard Deviation')
+    gly = FloatField(blank=True, null=True, default=0.0, verbose_name='Glycine')
+    gly_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Glycine Standard Deviation')
+    pro = FloatField(blank=True, null=True, default=0.0, verbose_name='Proline')
+    pro_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Proline Standard Deviation')
+    ser = FloatField(blank=True, null=True, default=0.0, verbose_name='Serine')
+    ser_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Serine Standard Deviation')
+    tyr = FloatField(blank=True, null=True, default=0.0, verbose_name='Tyrosine')
+    tyr_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tyrosine Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+    
+#Food with organic acid
+class OrganicAcid(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_organic_acid')
+    food_code = CharField(max_length=50, unique=True)
+    oxalatetot = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Oxalate')
+    oxalatetot_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Oxalate Standard Deviation')
+    oxalatesol = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Soluble Oxalate')
+    oxalatesol_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Soluble Oxalate Standard Deviation')
+    oxalateins = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Insoluble Oxalate')
+    oxalateins_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Insoluble Oxalate Standard Deviation')
+    cisacoacid = FloatField(blank=True, null=True, default=0.0, verbose_name='cis-Aconitic Acid')
+    cisacoacid_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='cis-Aconitic Acid Standard Deviation')
+    citac = FloatField(blank=True, null=True, default=0.0, verbose_name='Citric Acid')
+    citac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Citric Acid Standard Deviation')
+    fumac = FloatField(blank=True, null=True, default=0.0, verbose_name='Fumaric Acid')
+    fumac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Fumaric Acid Standard Deviation')
+    malac = FloatField(blank=True, null=True, default=0.0, verbose_name='Malic Acid')
+    malac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Malic Acid Standard Deviation')
+    quinic = FloatField(blank=True, null=True, default=0.0, verbose_name='Quinic Acid')
+    quinic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quinic Acid Standard Deviation')
+    sucac = FloatField(blank=True, null=True, default=0.0, verbose_name='Succinic Acid')
+    sucac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Succinic Acid Standard Deviation')
+    tarac = FloatField(blank=True, null=True, default=0.0, verbose_name= 'Tartaric Acid')
+    tarac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Tartaric Acid Standard Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with polyphenols
+class Polyphenols(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_polyphenols')
+    food_code = CharField(max_length=50, unique=True)
+    dhbenzacid = FloatField(blank=True, null=True, default=0.0, verbose_name='3,4-Dihydroxybenzoic Acid')
+    dhbenzacid_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='3,4-Dihydroxybenzoic Acid Deviation')
+    dhbenzaldehyde = FloatField(blank=True, null=True, default=0.0, verbose_name='3-Dihydroxybenzaldehyde')
+    dhbenzaldehyde_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='3-Dihydroxybenzaldehyde Deviation')
+    protocatechuic = FloatField(blank=True, null=True, default=0.0, verbose_name='Protocatechuic Acid')
+    protocatechuic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Protocatechuic Acid Deviation')
+    vanillic = FloatField(blank=True, null=True, default=0.0, verbose_name='Vanillic Acid')
+    vanillic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Vanillic Acid Deviation')
+    gallic = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallic Acid')
+    gallic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallic Acid Deviation')
+    cinnamic = FloatField(blank=True, null=True, default=0.0, verbose_name='Cinnamic Acid')
+    cinnamic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Cinnamic Acid Deviation')
+    o_coumaric = FloatField(blank=True, null=True, default=0.0, verbose_name='O-Coumaric Acid')
+    o_coumaric_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='O-Coumaric Acid Deviation')
+    p_coumaric = FloatField(blank=True, null=True, default=0.0, verbose_name='P-Coumaric Acid')
+    p_coumaric_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='P-Coumaric Acid Deviation')
+    caffeic = FloatField(blank=True, null=True, default=0.0, verbose_name='Caffeic Acid')
+    caffeic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Caffeic Acid Deviation')
+    chlrac = FloatField(blank=True, null=True, default=0.0, verbose_name='Chlorogenic Acid')
+    chlrac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Chlorogenic Acid Deviation')
+    ferac = FloatField(blank=True, null=True, default=0.0, verbose_name='Ferulic Acid')
+    ferac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Ferulic Acid Deviation')
+    apigen = FloatField(blank=True, null=True, default=0.0, verbose_name='Apigenin')
+    apigen_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Apigenin Deviation')
+    apigen_cg = FloatField(blank=True, null=True, default=0.0, verbose_name='Apigenin-6-C-gluoside')
+    apigen_cg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Apigenin-6-C-gluoside Deviation')
+    apigen_on = FloatField(blank=True, null=True, default=0.0, verbose_name='Apegenin-7-O-neohesperidoside')
+    apigen_on_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Apegenin-7-O-neohesperidoside Deviation')
+    luteol  = FloatField(blank=True, null=True, default=0.0, verbose_name='Luteolin')
+    luteol_sd  = FloatField(blank=True, null=True, default=0.0, verbose_name='Luteolin Deviation')
+    kaemf = FloatField(blank=True, null=True, default=0.0, verbose_name='Kaempferol')
+    kaemf_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Kaempferol Deviation')
+    querce = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin')
+    querce_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin Deviation')
+    querce_bd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin 3-beta-D-glucoside')
+    querce_bd_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin 3-beta-D-glucoside Deviation')
+    querce_or = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin 3-O-rutinoside')
+    querce_or_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin 3-O-rutinoside Deviation')
+    querce_bg = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin-3-beta-galactoside')
+    querce_bg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Quercetin-3-beta-galactoside Deviation')
+    isorhamnetin = FloatField(blank=True, null=True, default=0.0, verbose_name='Isorhamnetin')
+    isorhamnetin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Isorhamnetin Deviation')
+    myricetin = FloatField(blank=True, null=True, default=0.0, verbose_name='Myricetin')
+    myricetin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Myricetin Deviation')
+    resveratol = FloatField(blank=True, null=True, default=0.0, verbose_name='Resveratrol')
+    resveratol_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Resveratrol Deviation')
+    hespt = FloatField(blank=True, null=True, default=0.0, verbose_name='Hesperetin')
+    hespt_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Hesperetin Deviation')
+    naringenin = FloatField(blank=True, null=True, default=0.0, verbose_name='Naringenin')
+    naringenin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Naringenin Deviation')
+    hespd = FloatField(blank=True, null=True, default=0.0, verbose_name='Hesperdin')
+    hespd_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Hesperdin Deviation')
+    daidzn = FloatField(blank=True, null=True, default=0.0, verbose_name='Daidzein')
+    daidzn_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Daidzein Deviation')
+    gnstein = FloatField(blank=True, null=True, default=0.0, verbose_name='Genistein')
+    gnstein_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Genistein Deviation')
+    epicatec = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epicatechin')
+    epicatec_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epicatechin Deviation')
+    epicategc = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epigalocatechin')
+    epicategc_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epigalocatechin Deviation')
+    epigalocg = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epigalocatechin-3-gallate')
+    epigalocg_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='- Epigalocatechin-3-gallate Deviation')
+    catechin = FloatField(blank=True, null=True, default=0.0, verbose_name='+ Catechin')
+    catechin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='+ Catechin Deviation')
+    gallocatechin_ga = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallocatechin gallate')
+    gallocatechin_ga_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallocatechin gallate Deviation')
+    gallocatecin = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallocatechin')
+    gallocatecin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Gallocatechin Deviation')
+    syringic = FloatField(blank=True, null=True, default=0.0, verbose_name='Syringic Acid')
+    syringic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Syringic Acid Deviation')
+    sinapinic = FloatField(blank=True, null=True, default=0.0, verbose_name='Sinapinic Acid')
+    sinapinic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Sinapinic Acid Deviation')
+    ellagic = FloatField(blank=True, null=True, default=0.0, verbose_name='Ellagic Acid')
+    ellagic_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Ellagic Acid Deviation')
+    total_poly = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Polyphenols')
+    total_poly_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Polyphenols Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+#Food with oligosaccharides,phytosterols, phytates and saponins
+class Oligosaccharides(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_oligosaccharides')
+    food_code = CharField(max_length=50, unique=True)
+    rafs = FloatField(blank=True, null=True, default=0.0, verbose_name='Raffinose')
+    rafs_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Raffinose Deviation')
+    stas = FloatField(blank=True, null=True, default=0.0, verbose_name='Stachyose')
+    stas_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Stachyose Deviation')
+    vers = FloatField(blank=True, null=True, default=0.0, verbose_name='Verbacose')
+    vers_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Verbacose Deviation')
+    ajus = FloatField(blank=True, null=True, default=0.0, verbose_name='Ajugose')
+    ajus_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Ajugose Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'
+
+class PhytosterolsPhytateSaponin(models.Model):
+    id = AutoField(primary_key=True)
+    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_phytosterols')
+    food_code = CharField(max_length=50, unique=True)
+    camt = FloatField(blank=True, null=True, default=0.0, verbose_name='Campesterol')
+    camt_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Campesterol Deviation')
+    stgstr = FloatField(blank=True, null=True, default=0.0, verbose_name='Stigmasterol')
+    stgstr_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Stigmasterol Deviation')
+    bsitosterol = FloatField(blank=True, null=True, default=0.0, verbose_name='beta-Sitosterol')
+    bsitosterol_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='beta-Sitosterol Deviation')
+    phytac = FloatField(blank=True, null=True, default=0.0, verbose_name='Phytate')
+    phytac_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Phytate Deviation')
+    totsaponin = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Saponin')
+    totsaponin_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Total Saponin Deviation')
+
+    def __str__(self):
+        return f'{self.food_code}, {self.id}'

@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>FarmerHarvest - Empowering Agriculture</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <script src="https://cdn.tailwindcss.com"></script>
+      <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+      <style> 
+        html, body {
+          height: 100%;
+          margin: 0;
+        }
+        body { font-family: 'Poppins', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      </style>
+    </head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="text-white p-4" style="background-color: #047857;">
+    {% include 'header.html' %}
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow">
+    {% block nutrition %}{% endblock %}
+  </main>
+ <!-- Footer -->
+  <footer class="text-white py-6 mt-10" style="background-color: #047857;">
+    {% if request.user.is_authenticated == False or request.path == '/' %}
+      {% include 'footer.html' %}
+    {% else %}
+      {% include 'footer-1.html' %}
+    {% endif %}
+  </footer>
+
+</body>
+</html>
