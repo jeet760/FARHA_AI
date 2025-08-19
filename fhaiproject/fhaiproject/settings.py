@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-@2kq4cehzukk4)^^gol0pt0t35)m0n*01ie!$nx2xm25a-v)3v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','3.7.69.40', 'farmerharvest.in', 'www.farmerharvest.in', 'nutritracks.farmerharvest.in', 'www.nutritracks.farmerharvest.in']
 
 
 # Application definition
