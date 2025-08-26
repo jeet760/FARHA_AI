@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
 from .models import NutritentReferenceUnit, Food, DietaryFibre, WaterSolubleVitamins, FatSolubleVitamins, Carotenoids, MineralsAndTraceElements, StarchAndSugars, FattyAcid, AminoAcid, OrganicAcid, Polyphenols, Oligosaccharides, PhytosterolsPhytateSaponin
 from django.db.models import Q, Max, Min, Sum, Count, OuterRef, Subquery, F, Value
 import requests
@@ -404,6 +405,11 @@ def fetch_api_data(request):
         sep='_'
     )
 
+    #checks whether any data fetched or not! if not fetched the make data = false
+    if df.empty:
+        messages.error(request, 'No data found!')
+        return {'Data':False}
+
     # Group by item to get total quantities
     item_cat_group = df.groupby(
         ['item_name', 'item_cat', 'item_unit'], as_index=False
@@ -518,6 +524,9 @@ def dashboard(request):
         messages.error(request, 'Please connect to internet!')
     else:
         api_data = fetch_api_data(request)
+        if api_data['Data'] == False: #checks whether data found or not
+            messages.error(request, 'Error in fetching data!')
+            return HttpResponse('Data not found!')
 
         rda_macro_labels = ['Energy', 'Carbohydrates', 'Protein', 'Fat', 'Fibre']
         rda_micro_labels_vitamins = ['Vit-A', 'Vit-D', 'Vit-E', 'Vit-K', 'Vit-C']
