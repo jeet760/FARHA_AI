@@ -13,7 +13,7 @@ while url:
     all_users.extend(data['results'])  # accumulate all users
     url = data['next']  # next page URL, None if last page
 
-print(f"Total users fetched: {len(all_users)}")
+#print(f"Total users fetched: {len(all_users)}")
 
 # Flatten order_details into rows, keeping user and school info
 item_df = pd.json_normalize(
@@ -40,13 +40,13 @@ item_cat_group = item_df.groupby(
 )['itemQty'].sum()
 
 
-print("Item summary:")
-print(item_cat_group)
+# print("Item summary:")
+# print(item_cat_group)
 
-print('Data frame is:')
-print(item_df)
+# print('Data frame is:')
+# print(item_df)
 
-print('Student Summary')
+# print('Student Summary')
 student_df = pd.json_normalize(
     all_users,                          # your JSON
     meta=['id', 'first_name', 'userType',
@@ -81,10 +81,10 @@ student_df = student_df.rename(columns={
 student_df['primary_students'] = student_df[['i_students','ii_students','iii_students','iv_students','v_students']].sum(axis=1)
 student_df['upper_students']   = student_df[['vi_students','vii_students','viii_students','ix_students','x_students']].sum(axis=1)
 
-print('Total Students from I to V:')
-print(student_df['primary_students'].sum())
-print('Total Students from VI to X:')
-print(student_df['upper_students'].sum())
+# print('Total Students from I to V:')
+# print(student_df['primary_students'].sum())
+# print('Total Students from VI to X:')
+# print(student_df['upper_students'].sum())
 # print('VI-X total Students:')
 # total_v_x_students = class_totals_vi_x.groupby("first_name")["school_info_total_students"].max()
 # print(f'No. of Students in VI to X {total_v_x_students.sum()}')
