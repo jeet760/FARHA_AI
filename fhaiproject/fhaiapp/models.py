@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import AutoField, CharField, TextField, FloatField, ForeignKey, CASCADE
+from django.db.models import AutoField, CharField, TextField, FloatField, OneToOneField, ForeignKey, CASCADE
 
 #Food category Map
 class FoodCategoryMap(models.Model):
@@ -37,7 +37,7 @@ class Food(models.Model):
 #Food Dietary Fibre
 class DietaryFibre(models.Model):
     id = AutoField(primary_key=True)
-    food_id = ForeignKey(Food, on_delete=CASCADE, related_name='food_dietary_fibre')
+    food_id = OneToOneField(Food, on_delete=CASCADE, related_name='food_dietary_fibre')
     food_code = CharField(max_length=50, unique=True)
     water = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Content')
     water_sd = FloatField(blank=True, null=True, default=0.0, verbose_name='Water Content Deviation')

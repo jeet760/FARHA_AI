@@ -9,6 +9,7 @@ import json
 import socket
 from .nutrients import NutritionReport
 from .process_dietary_elements import PDE
+from .farha_ai_engine import FarhaAIEngine
 
 # Create your views here.
 def site_online(host='farmerharvest.in', port=443, timeout=3):
@@ -557,3 +558,35 @@ def details(request):
     }
     
     return render(request, 'nutrition.html', return_context)
+
+def farha_ai_engine_chat(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode("utf-8"))
+        user_message = data.get("query", "")
+        #user_message = request.POST['input']
+        if user_message:
+            faie = FarhaAIEngine()
+            bot_response = faie.nutrition_query(q=user_message)
+            ai_response = json.loads(bot_response.content)
+            # print(ai_response['user_query'])
+            # print(ai_response['respnose_text'])
+            return_context = {
+                'user_message': user_message,
+                'bot_response': ai_response['respnose_text'],
+                'user_query':ai_response['user_query']
+            }
+            return JsonResponse(return_context)
+        else:
+            return_context = {
+                'user_message': None,
+                'bot_response': 'Sorry! Something went wrong.',
+                'user_query':None
+            }
+            return JsonResponse(return_context)
+    else:
+        return_context = {
+            'user_message': None,
+            'bot_response': 'Sorry! Something went wrong.',
+            'user_query':None
+        }
+    return render(request, 'farha-ai.html', context=return_context)
