@@ -109,6 +109,7 @@ def calculate_for_students(all_users):
         sep='_',
         errors='ignore'
     )
+
     #calculate total number of schools, students and individuals
     school_df['i_iv_total'] = (
         school_df["school_info_i_students"]
@@ -124,10 +125,18 @@ def calculate_for_students(all_users):
         + school_df["school_info_ix_students"]
         + school_df["school_info_x_students"]
     )
-    no_of_schools = school_df['first_name'].nunique()   #total schools
-    no_of_students_i_v = int(school_df['i_iv_total'].iloc[0])
-    no_of_students_vi_x = int(school_df['vi_x_total'].iloc[0])
-    no_of_students = no_of_students_i_v + no_of_students_vi_x   #total students
+    # Step 1: Create totals per school
+    school_totals = school_df.groupby('first_name', as_index=False).agg({
+        'i_iv_total': 'first',     # student data is same for each order of a school
+        'vi_x_total': 'first',
+        'school_info_total_students': 'first'
+    })
+    # Step 2: Overall counts
+    no_of_schools = school_totals['first_name'].nunique()
+    no_of_students_i_v = school_totals['i_iv_total'].sum()
+    no_of_students_vi_x = school_totals['vi_x_total'].sum()
+    no_of_students = school_totals['school_info_total_students'].sum()
+    
     item_cat_group = school_df.groupby(
         ['item_name', 'item_cat', 'item_unit'], as_index=False
     )['itemQty'].sum()
@@ -172,10 +181,10 @@ def calculate_for_others(all_users):
 def calculate_for_all(all_users):
     school_context = calculate_for_students(all_users=all_users)
     school_df = school_context['school_df']
-    no_of_schools = school_df['first_name'].nunique()   #total schools
-    no_of_students_i_v = int(school_df['i_iv_total'].iloc[0])
-    no_of_students_vi_x = int(school_df['vi_x_total'].iloc[0])
-    no_of_students = no_of_students_i_v + no_of_students_vi_x   #total students
+    no_of_schools = school_context['no_of_schools']
+    no_of_students_i_v = school_context['no_of_students_i_v']
+    no_of_students_vi_x = school_context['no_of_students_vi_x']
+    no_of_students = school_context['no_of_students']
     
     others_context = calculate_for_others(all_users=all_users)
     no_of_individuals = others_context['no_of_individuals']
