@@ -46,7 +46,7 @@
   <div x-data="nutritionDashboard()" x-init="init()" class="min-h-screen">
 
     <!-- Header -->
-    <header class="bg-white border-b">
+    <header class="bg-white border-b shadow-md">
       <div class="max-w-7xl mx-auto px-3 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
         <div class="flex flex-col">
           <a href="/" class="text-xl font-semibold">
@@ -66,27 +66,6 @@
               <option :value="u.code" x-text="u.name"></option>
             </template>
           </select>
-
-          <!-- <select x-model="state" @change="onStateChange" class="rounded border px-3 py-1 text-sm">
-            <template x-for="s in stateList" :key="s.code">
-              <option :value="s.code" x-text="s.name"></option>
-            </template>
-          </select>
-
-          <select x-model="district" @change="onDistrictChange" class="rounded border px-3 py-1 text-sm">
-            <option value="">Select District</option>
-            <template x-for="d in districtList" :key="d.code">
-              <option :value="d.code" x-text="d.name"></option>
-            </template>
-          </select>
-
-          <select x-model="subdistrict" @change="onSubdistrictChange" class="rounded border px-3 py-1 text-sm">
-            <option value="">Select Sub-district</option>
-            <template x-for="sd in subdistrictList" :key="sd.code">
-              <option :value="sd.code" x-text="sd.name"></option>
-            </template>
-          </select> -->
-
           <button @click="applyFilters" class="ml-2 bg-[#047857] text-white px-3 py-1 rounded text-sm">Apply</button>
         </div>
       </div>
@@ -241,15 +220,19 @@
             </template>
           </div>
         </div>
-
       </section>
-
     </main>
 
 
     <!-- Footer -->
-    <footer class="max-w-7xl mx-auto px-6 py-4 text-sm text-gray-500">
-      Powered by <a style="text-decoration: none; color: #777;" href="https://nutritracks.in/farha-ai">FarHa AI</a> | Nutrition Dashboard prototype
+    <footer class="bg-gray-500 text-gray-200 py-4">
+      <div class="w-[90%] max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
+        <p>&copy; <span x-text="new Date().getFullYear()"></span> Powered by <a style="text-decoration: none; color: #ffffff;" href="https://nutritracks.in/farha-ai">FarHa AI</a> | Nutrition Dashboard prototype</p>
+        <div class="mt-2 md:mt-0 space-x-4">
+          <a href="#" class="hover:underline">Privacy Policy</a>
+          <a href="#" class="hover:underline">Contact</a>
+        </div>
+      </div>
     </footer>
   </div>
 
@@ -412,28 +395,29 @@
 
       applyFilters() {
         var selected_user = this.user;
-        if(selected_user === '3'){
-          //schools
-          window.location.href = `{% url "dashboard" %}?user=${this.user}`;
-          document.querySelectorAll('.mdm').forEach(el => {
-              el.classList.remove('hidden');
-          });
-          document.querySelector('.consumer').innerHTML = 'Beneficiaries Served';
-        }
-        else if(selected_user === '5'){
-          //others
-          window.location.href = `{% url "dashboard" %}?user=${this.user}`;
-          document.querySelectorAll('.mdm').forEach(el => {
-              el.classList.remove('hidden');
-          });
-          document.querySelector('.consumer').innerHTML = 'Consumers Reached';
-        }
-        else{
-          window.location.href = `{% url "dashboard" %}?user=0`;
-          document.querySelectorAll('.mdm').forEach(el => {
-              el.classList.remove('hidden');
-          });
-        }
+        window.location.href = `{% url "details" %}?user=${this.user}`;
+        // if(selected_user === '3'){
+        //   //schools
+        //   window.location.href = `{% url "dashboard" %}?user=${this.user}`;
+        //   document.querySelectorAll('.mdm').forEach(el => {
+        //       el.classList.remove('hidden');
+        //   });
+        //   document.querySelector('.consumer').innerHTML = 'Beneficiaries Served';
+        // }
+        // else if(selected_user === '5'){
+        //   //others
+        //   window.location.href = `{% url "dashboard" %}?user=${this.user}`;
+        //   document.querySelectorAll('.mdm').forEach(el => {
+        //       el.classList.remove('hidden');
+        //   });
+        //   document.querySelector('.consumer').innerHTML = 'Consumers Reached';
+        // }
+        // else{
+        //   window.location.href = `{% url "dashboard" %}?user=0`;
+        //   document.querySelectorAll('.mdm').forEach(el => {
+        //       el.classList.remove('hidden');
+        //   });
+        // }
       },
 
       onCellClick(cell) {

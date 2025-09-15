@@ -111,7 +111,7 @@ def calculate_for_students(all_users):
     )
 
     #calculate total number of schools, students and individuals
-    school_df['i_iv_total'] = (
+    school_df['i_v_total'] = (
         school_df["school_info_i_students"]
         + school_df["school_info_ii_students"]
         + school_df["school_info_iii_students"]
@@ -127,13 +127,13 @@ def calculate_for_students(all_users):
     )
     # Step 1: Create totals per school
     school_totals = school_df.groupby('first_name', as_index=False).agg({
-        'i_iv_total': 'first',     # student data is same for each order of a school
+        'i_v_total': 'first',     # student data is same for each order of a school
         'vi_x_total': 'first',
         'school_info_total_students': 'first'
     })
     # Step 2: Overall counts
     no_of_schools = school_totals['first_name'].nunique()
-    no_of_students_i_v = school_totals['i_iv_total'].sum()
+    no_of_students_i_v = school_totals['i_v_total'].sum()
     no_of_students_vi_x = school_totals['vi_x_total'].sum()
     no_of_students = school_totals['school_info_total_students'].sum()
     
@@ -484,7 +484,6 @@ def dashboard(request):
     mdm_achieved_protein_data.append(avg_unit_protein_vi_x)
         
     #print(f'{api_data['dietary_fibre_context']['food_cat_total_carb_list']}')
-
     return_context = {
         'states':json.dumps(LIST_STATES),
         'no_of_schools': api_data['no_of_schools'],
@@ -541,29 +540,49 @@ def dashboard(request):
     }
     return render(request, 'dashboard.html', context=return_context)
 
-def details(request):
-    api_data = fetch_api_data(request)
-    # Fetching all food items
-    food_items = Food.objects.all()
-    
-    # Fetching all nutrient reference units
-    nutrient_reference_units = NutritentReferenceUnit.objects.all()
+def school_wise_nutrition_details(schools):
+    item_cat_group = []
+    for school in schools:
+        item_cat_group = school['order_details']
+        nutrition_df = pd.DataFrame(item_cat_group)
+        # proximates = PDE.process_dietary_fibre(item_cat_group=nutrition_df)
+        proximates_df = PDE.process_item_proximates(item_cat_group=nutrition_df)
+        school['nutrition_details'] = proximates_df.to_dict(orient="records")   # JSON-safe
+    return schools
 
+def details(request):
+    user_type = request.GET.get('user', '0')
+    api_data = fetch_api_data(request, user=user_type)
+    schools = api_data['api_data']['results']
+    if user_type == "0" or not user_type:
+        return render(request, 'nutrition.html', {})
+    if user_type == "3":
+        for school in schools:
+            info = school["school_info"]
+            # calculate totals for each school
+            school["i_v_total"] = (
+                info["i_students"]
+                + info["ii_students"]
+                + info["iii_students"]
+                + info["iv_students"]
+                + info["v_students"]
+            )
+            school["vi_x_total"] = (
+                info["vi_students"]
+                + info["vii_students"]
+                + info["viii_students"]
+                + info["ix_students"]
+                + info["x_students"]
+            )
+    else:
+        for school in schools:
+            info = school["school_info"]
+            # calculate totals for each school
+            school["i_v_total"] = (0)
+            school["vi_x_total"] = (0)
+    calculated_schools = school_wise_nutrition_details(schools=schools)
     return_context = {
-        'api_data': api_data['api_data']['results'],
-        'item_cat_group': api_data['item_cat_group'],
-        'total_protein_content': f'{api_data['total_protein_content']:.2f} {api_data['protcnt_nru']}',
-        'total_fat_content': f'{api_data['total_fat_content']:.2f} {api_data['fatce_nru']}',
-        'total_fibre_content': f'{api_data['total_fibre_content']:.2f} {api_data['fibtg_nru']}',
-        'total_carb_content': f'{api_data['total_carb_content']:.2f} {api_data['choavldf_nru']}',
-        'total_calories': f'{api_data['total_calories']/4.18:.2f} {api_data['enerc_nru']}',
-        'no_of_schools': api_data['no_of_schools'],
-        'no_of_students': api_data['no_of_students'],
-        'unit_protein_content': f'{api_data['total_protein_content']/api_data['no_of_students']:.2f} {api_data['protcnt_nru']}',
-        'unit_fat_content': f'{api_data['total_fat_content']/api_data['no_of_students']:.2f} {api_data['fatce_nru']}',
-        'unit_fibre_content': f'{api_data['total_fibre_content']/api_data['no_of_students']:.2f} {api_data['fibtg_nru']}',
-        'unit_carb_content': f'{api_data['total_carb_content']/api_data['no_of_students']:.2f} {api_data['choavldf_nru']}',
-        'unit_calories': f'{api_data['total_calories']/api_data['no_of_students']:.2f} {api_data['enerc_nru']}',
+        'schools':calculated_schools,
     }
     
     return render(request, 'nutrition.html', return_context)

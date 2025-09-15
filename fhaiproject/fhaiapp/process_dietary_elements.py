@@ -1,6 +1,6 @@
 from django.db.models import Q, Max, Min, Sum, Count, OuterRef, Subquery, F, Value
 from .models import NutritentReferenceUnit, Food, DietaryFibre, WaterSolubleVitamins, FatSolubleVitamins, Carotenoids, MineralsAndTraceElements, StarchAndSugars, FattyAcid, AminoAcid, OrganicAcid, Polyphenols, Oligosaccharides, PhytosterolsPhytateSaponin
-
+import pandas as pd
 class PDE:
     def process_dietary_fibre(item_cat_group):
         total_protein_content = 0
@@ -306,3 +306,138 @@ class PDE:
                     'vitc_nru':vitc_nru
                 }
         return return_context
+
+    def process_proximates(item_cat_group):
+        # Pre-fetch NRU units (once only)
+        nru_map = {
+            "protcnt": NutritentReferenceUnit.objects.get(nutrient="protcnt").unit,
+            "fatce": NutritentReferenceUnit.objects.get(nutrient="fatce").unit,
+            "fibtg": NutritentReferenceUnit.objects.get(nutrient="fibtg").unit,
+            "choavldf": NutritentReferenceUnit.objects.get(nutrient="choavldf").unit,
+            "enerc": "kcal",
+        }
+
+        # Attach food_code and nutrient values to rows
+        def get_nutrients(item_name):
+            food = (
+                Food.objects.filter(
+                    Q(food_name=item_name)
+                    | Q(food_name__icontains=item_name)
+                    | Q(description__icontains=item_name)
+                )
+                .distinct()
+                .first()
+            )
+            if not food:
+                return pd.Series([0, 0, 0, 0, 0], 
+                                index=["protcnt", "fatce", "fibtg", "choavldf", "enerc"])
+            df = DietaryFibre.objects.filter(food_code=food.food_code).values().first()
+            return pd.Series({
+                "protcnt": df["protcnt"],
+                "fatce": df["fatce"],
+                "fibtg": df["fibtg"],
+                "choavldf": df["choavldf"],
+                "enerc": float(df["enerc"]) / 4.18,
+            })
+
+        nutrients_df = item_cat_group["item_name"].apply(get_nutrients)
+        df = pd.concat([item_cat_group, nutrients_df], axis=1)
+
+        # Handle units → conversion factors
+        def qty_factor(row):
+            if row.item_unit == "kg":
+                return 10 * float(row.itemQty)   # 1kg = 1000g → (1000/100)=10
+            elif row.item_unit == "g":
+                return float(row.itemQty) / 100
+            elif row.item_unit == "Pieces" and row.item_name == "Egg":
+                return (row.itemQty * 50) / 100  # avg 50g per egg
+            return 0
+
+        df["factor"] = df.apply(qty_factor, axis=1)
+
+        # Calculate contributions
+        for col in ["protcnt", "fatce", "fibtg", "choavldf", "enerc"]:
+            df[col + "_total"] = df[col].astype(float) * df["factor"]
+
+        # Grand totals
+        totals = df[["protcnt_total","fatce_total","fibtg_total","choavldf_total","enerc_total"]].sum()
+
+        # Group by category (Animal Sourced / Vegetables / Pulses)
+        grouped = df.groupby("item_cat")[["protcnt_total","fatce_total","fibtg_total","choavldf_total"]].sum()
+
+        return {
+            "total_protein_content": totals["protcnt_total"],
+            "total_fat_content": totals["fatce_total"],
+            "total_fibre_content": totals["fibtg_total"],
+            "total_carb_content": totals["choavldf_total"],
+            "total_calories": totals["enerc_total"],
+            "protcnt_nru": nru_map["protcnt"],
+            "fatce_nru": nru_map["fatce"],
+            "fibtg_nru": nru_map["fibtg"],
+            "choavldf_nru": nru_map["choavldf"],
+            "enerc_nru": nru_map["enerc"],
+            "food_cat_total_protein_list": grouped["protcnt_total"].tolist(),
+            "food_cat_total_carb_list": grouped["choavldf_total"].tolist(),
+            "food_cat_total_fat_list": grouped["fatce_total"].tolist(),
+            "food_cat_total_fiber_list": grouped["fibtg_total"].tolist(),
+        }
+    
+    def process_item_proximates(item_cat_group):
+        # Pre-fetch NRU units (once only)
+        nru_map = {
+            "protcnt": NutritentReferenceUnit.objects.get(nutrient="protcnt").unit,
+            "fatce": NutritentReferenceUnit.objects.get(nutrient="fatce").unit,
+            "fibtg": NutritentReferenceUnit.objects.get(nutrient="fibtg").unit,
+            "choavldf": NutritentReferenceUnit.objects.get(nutrient="choavldf").unit,
+            "enerc": "kcal",
+        }
+
+        # Attach food_code and nutrient values to rows
+        def get_nutrients(item_name):
+            food = (
+                Food.objects.filter(
+                    Q(food_name=item_name)
+                    | Q(food_name__icontains=item_name)
+                    | Q(description__icontains=item_name)
+                )
+                .distinct()
+                .first()
+            )
+            if not food:
+                return pd.Series([0, 0, 0, 0, 0], 
+                                index=["protcnt", "fatce", "fibtg", "choavldf", "enerc"])
+            df = DietaryFibre.objects.filter(food_code=food.food_code).values().first()
+            return pd.Series({
+                "protcnt": df["protcnt"],
+                "fatce": df["fatce"],
+                "fibtg": df["fibtg"],
+                "choavldf": df["choavldf"],
+                "enerc": float(df["enerc"]) / 4.18,
+            })
+
+        nutrients_df = item_cat_group["item_name"].apply(get_nutrients)
+        df = pd.concat([item_cat_group, nutrients_df], axis=1)
+
+        # Handle units → conversion factors
+        def qty_factor(row):
+            if row.item_unit == "kg":
+                return 10 * float(row.itemQty)   # 1kg = 1000g → (1000/100)=10
+            elif row.item_unit == "g":
+                return float(row.itemQty) / 100
+            elif row.item_unit == "Pieces" and row.item_name == "Egg":
+                return (row.itemQty * 50) / 100  # avg 50g per egg
+            return 0
+
+        df["factor"] = df.apply(qty_factor, axis=1)
+
+        # Calculate contributions
+        for col in ["protcnt", "fatce", "fibtg", "choavldf", "enerc"]:
+            df[col + "_total"] = df[col].astype(float) * df["factor"]
+
+        # Grand totals
+        totals = df[["protcnt_total","fatce_total","fibtg_total","choavldf_total","enerc_total"]].sum()
+
+        # Group by category (Animal Sourced / Vegetables / Pulses)
+        grouped = df.groupby("item_cat")[["protcnt_total","fatce_total","fibtg_total","choavldf_total"]].sum()
+
+        return df
