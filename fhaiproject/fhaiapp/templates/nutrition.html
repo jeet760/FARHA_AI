@@ -93,7 +93,7 @@
     <div x-show="selectedSchool" class="bg-white rounded-xl shadow-md overflow-hidden">
       <button @click="openNutrition = !openNutrition"
         class="w-full flex justify-between items-center bg-green-600 text-white px-6 py-3 font-semibold hover:bg-green-700 transition">
-        <span>Proximate Values</span>
+        <span>Proximate Principles</span>
         <svg :class="{'rotate-180': openNutrition}" class="h-5 w-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -123,16 +123,21 @@
         </button>
         <table id="nutritionTable" class="w-full border-collapse text-sm md:text-base">
           <thead>
-            <tr class="bg-gray-100" style="text-align: left;">
+            <tr class="bg-gray-100 font-semibold text-[#FF9933]" style="text-align: left;">
               <th class="p-2 border">School</th>
               <th class="p-2 border" colspan="15" x-text="currentSchool.first_name"></th>
             </tr>
-            <tr class="bg-gray-100" style="text-align: left;">
+            <tr class="bg-gray-100 font-semibold text-[#FF9933]" style="text-align: left;">
               <th class="p-2 border">Students</th>
-              <th class="p-2 border" colspan="15" x-text="getSchoolInfo().total_students"></th>
+              <th class="p-2 border" x-text="getSchoolInfo().total_students"></th>
+              <th class="p-2 border" colspan="2">Class I-V</th>
+              <th class="p-2 border" x-text="currentSchool.i_v_total"></th>
+              <th class="p-2 border" colspan="2">Class V-X</th>
+              <th class="p-2 border" x-text="currentSchool.vi_x_total"></th>
+              <th class="p-2 border" colspan="8"></th>
             </tr>
             <tr class="bg-gray-100 text-left">
-              <th class="p-2 border" rowspan="2">Item Cat</th>
+              <th class="p-2 border" rowspan="2">Category</th>
               <th class="p-2 border" rowspan="2">Item Name</th>
               <th class="p-2 border" rowspan="2">Qty.</th>
               <th class="p-2 border" rowspan="2">Unit</th>
@@ -190,8 +195,8 @@
     <div class="w-[90%] max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm">
       <p>&copy; <span x-text="new Date().getFullYear()"></span> Powered by <a style="text-decoration: none; color: #ffffff;" href="https://nutritracks.in/farha-ai">FarHa AI</a> | Nutrition Dashboard prototype</p>
       <div class="mt-2 md:mt-0 space-x-4">
-        <a href="#" class="hover:underline">Privacy Policy</a>
-        <a href="#" class="hover:underline">Contact</a>
+        <a href="https://farmerharvest.in/privacy-policy" class="hover:underline">Privacy Policy</a>
+        <a href="https://farmerharvest.in/contact" class="hover:underline">Contact</a>
       </div>
     </div>
   </footer>
