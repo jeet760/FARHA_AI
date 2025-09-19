@@ -441,3 +441,170 @@ class PDE:
         grouped = df.groupby("item_cat")[["protcnt_total","fatce_total","fibtg_total","choavldf_total"]].sum()
 
         return df
+    
+    def process_item_vitamins(item_cat_group):
+        # Pre-fetch NRU units (once only)
+        nru_map = {
+            #vitamin a
+            "retol": NutritentReferenceUnit.objects.get(nutrient="retol").unit,
+            "cartb": NutritentReferenceUnit.objects.get(nutrient="cartb").unit,
+            "carta": NutritentReferenceUnit.objects.get(nutrient="carta").unit,
+            "crypxb": NutritentReferenceUnit.objects.get(nutrient="crypxb").unit,
+            #vitamin D
+            "ergcal": NutritentReferenceUnit.objects.get(nutrient="ergcal").unit,
+            "chocal": NutritentReferenceUnit.objects.get(nutrient="chocal").unit,
+            #vitamin e
+            "tocpha": NutritentReferenceUnit.objects.get(nutrient="tocpha").unit,
+            "tocphb": NutritentReferenceUnit.objects.get(nutrient="tocphb").unit,
+            "tocphg": NutritentReferenceUnit.objects.get(nutrient="tocphg").unit,
+            "tocphd": NutritentReferenceUnit.objects.get(nutrient="tocphd").unit,
+            "toctra": NutritentReferenceUnit.objects.get(nutrient="toctra").unit,
+            "toctrb": NutritentReferenceUnit.objects.get(nutrient="toctrb").unit,
+            "toctrg": NutritentReferenceUnit.objects.get(nutrient="toctrg").unit,
+            "toctrd": NutritentReferenceUnit.objects.get(nutrient="toctrd").unit,
+            #vitamin k
+            "vitk1": NutritentReferenceUnit.objects.get(nutrient="vitk1").unit,
+            "vitk2": NutritentReferenceUnit.objects.get(nutrient="vitk2").unit,
+            #vitamin c
+            "vitc": NutritentReferenceUnit.objects.get(nutrient="vitc").unit,
+        }
+
+        # Attach food_code and nutrient values to rows
+        def get_nutrients(item_name):
+            food = (
+                Food.objects.filter(
+                    Q(food_name=item_name)
+                    | Q(food_name__icontains=item_name)
+                    | Q(description__icontains=item_name)
+                )
+                .distinct()
+                .first()
+            )
+            if not food:
+                return pd.Series([0, 0, 0, 0, 0], 
+                                index=["vita", "vitc", "vitd", "vite", "vitk"])
+            dietary_vitamins_f = FatSolubleVitamins.objects.filter(food_code=food.food_code).values().first()
+            dietary_vitamins_w = WaterSolubleVitamins.objects.filter(food_code=food.food_code).values().first()
+            dietary_carotenoids = Carotenoids.objects.filter(food_code=food.food_code).values().first()
+            #vitamin a
+            retol = dietary_vitamins_f['retol'] or 0.0 #µg
+            cartb = dietary_carotenoids['cartb'] or 0.0 #µg
+            carta = dietary_carotenoids['carta'] or 0.0 #µg
+            crypxb = dietary_carotenoids['crypxb'] or 0.0 #µg
+            #vitamin d
+            ergcal = dietary_vitamins_f['ergcal'] or 0.0 #µg
+            chocal = dietary_vitamins_f['chocal'] or 0.0 #µg
+            #vitamin e
+            tocpha = dietary_vitamins_f['tocpha'] or 0.0 #mg
+            tocphb = dietary_vitamins_f['tocphb'] or 0.0 #mg
+            tocphg = dietary_vitamins_f['tocphg'] or 0.0 #mg
+            tocphd = dietary_vitamins_f['tocphd'] or 0.0 #mg
+            toctra = dietary_vitamins_f['toctra'] or 0.0 #mg
+            toctrb = dietary_vitamins_f['toctrb'] or 0.0 #mg
+            toctrg = dietary_vitamins_f['toctrg'] or 0.0 #mg
+            toctrd = dietary_vitamins_f['toctrd'] or 0.0 #mg
+            #vitamin k
+            vitk1 = dietary_vitamins_f['vitk1'] or 0.0 #µg
+            vitk2 = dietary_vitamins_f['vitk2'] or 0.0 #µg
+            #vitamin c
+            vitc = dietary_vitamins_w['vitc'] or 0.0 #mg
+
+            vita = retol + (cartb / 12.0) + (carta / 24.0) + (crypxb / 24.0)
+            vitd = ergcal + chocal
+            vite = tocpha + tocphb + tocphg + tocphd + toctra + toctrb + toctrg + toctrd
+            vitk = vitk1 + vitk2
+
+            return pd.Series({
+                "vita": vita,
+                "vitc": vitc,
+                "vitd": vitd,
+                "vite": vite,
+                "vitk": vitk
+            })
+
+        nutrients_df = item_cat_group["item_name"].apply(get_nutrients)
+        df = pd.concat([item_cat_group, nutrients_df], axis=1)
+
+        # Handle units → conversion factors
+        def qty_factor(row):
+            if row.item_unit == "kg":
+                return 10 * float(row.itemQty)   # 1kg = 1000g → (1000/100)=10
+            elif row.item_unit == "g":
+                return float(row.itemQty) / 100
+            elif row.item_unit == "Pieces" and row.item_name == "Egg":
+                return (row.itemQty * 50) / 100  # avg 50g per egg
+            return 0
+
+        df["factor"] = df.apply(qty_factor, axis=1)
+
+        # Calculate contributions
+        for col in ["vita", "vitc", "vitd", "vite", "vitk"]:
+            df[col + "_total"] = df[col].astype(float) * df["factor"]
+
+        # Grand totals
+        totals = df[["vita_total","vitc_total","vitd_total","vite_total","vitk_total"]].sum()
+
+        # Group by category (Animal Sourced / Vegetables / Pulses)
+        grouped = df.groupby("item_cat")[["vita_total","vitc_total","vitd_total","vite_total","vitk_total"]].sum()
+
+        return df
+
+    def process_item_minerals(item_cat_group):
+        # Pre-fetch NRU units (once only)
+        nru_map = {
+            "fe": NutritentReferenceUnit.objects.get(nutrient="fe").unit,
+            "ca": NutritentReferenceUnit.objects.get(nutrient="ca").unit,
+            "mg": NutritentReferenceUnit.objects.get(nutrient="mg").unit,
+            "p": NutritentReferenceUnit.objects.get(nutrient="p").unit,
+            "k": NutritentReferenceUnit.objects.get(nutrient="k").unit,
+        }
+
+        # Attach food_code and nutrient values to rows
+        def get_nutrients(item_name):
+            food = (
+                Food.objects.filter(
+                    Q(food_name=item_name)
+                    | Q(food_name__icontains=item_name)
+                    | Q(description__icontains=item_name)
+                )
+                .distinct()
+                .first()
+            )
+            if not food:
+                return pd.Series([0, 0, 0, 0, 0], 
+                                index=["fe", "ca", "mg", "p", "k"])
+            df = MineralsAndTraceElements.objects.filter(food_code=food.food_code).values().first()
+            return pd.Series({
+                "fe": df["fe"],
+                "ca": df["ca"],
+                "mg": df["mg"],
+                "p": df["p"],
+                "k": df["k"],
+            })
+
+        nutrients_df = item_cat_group["item_name"].apply(get_nutrients)
+        df = pd.concat([item_cat_group, nutrients_df], axis=1)
+
+        # Handle units → conversion factors
+        def qty_factor(row):
+            if row.item_unit == "kg":
+                return 10 * float(row.itemQty)   # 1kg = 1000g → (1000/100)=10
+            elif row.item_unit == "g":
+                return float(row.itemQty) / 100
+            elif row.item_unit == "Pieces" and row.item_name == "Egg":
+                return (row.itemQty * 50) / 100  # avg 50g per egg
+            return 0
+
+        df["factor"] = df.apply(qty_factor, axis=1)
+
+        # Calculate contributions
+        for col in ["fe", "ca", "mg", "p", "k"]:
+            df[col + "_total"] = df[col].astype(float) * df["factor"]
+
+        # Grand totals
+        totals = df[["fe_total","ca_total","mg_total","p_total","k_total"]].sum()
+
+        # Group by category (Animal Sourced / Vegetables / Pulses)
+        grouped = df.groupby("item_cat")[["fe_total","ca_total","mg_total","p_total","k_total"]].sum()
+
+        return df

@@ -545,9 +545,12 @@ def school_wise_nutrition_details(schools):
     for school in schools:
         item_cat_group = school['order_details']
         nutrition_df = pd.DataFrame(item_cat_group)
-        # proximates = PDE.process_dietary_fibre(item_cat_group=nutrition_df)
         proximates_df = PDE.process_item_proximates(item_cat_group=nutrition_df)
-        school['nutrition_details'] = proximates_df.to_dict(orient="records")   # JSON-safe
+        vitamins_df = PDE.process_item_vitamins(item_cat_group=nutrition_df)
+        minerals_df = PDE.process_item_minerals(item_cat_group=nutrition_df)
+        school['proximates_details'] = proximates_df.to_dict(orient="records")   # JSON-safe
+        school['vitamins_details'] = vitamins_df.to_dict(orient="records")   # JSON-safe
+        school['minerals_details'] = minerals_df.to_dict(orient="records")   # JSON-safe
     return schools
 
 def details(request):
