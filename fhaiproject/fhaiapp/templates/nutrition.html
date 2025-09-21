@@ -137,26 +137,35 @@
           <table id="proximatesTable" class="w-full border-collapse text-xs md:text-sm">
             <thead class="bg-gray-100 text-[#19183B]">
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
+                {% if user_type == '3'%}
                 <th class="p-2 border">School</th>
                 <th class="p-2 border" colspan="18" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% else %}
+                <th class="p-2 border">Name</th>
+                <th class="p-2 border" colspan="8" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% endif %}
               </tr>
+              {% if user_type == '3'%}
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
                 <th class="p-2 border">Students</th>
                 <th class="p-2 border" style="color: black;" x-text="getSchoolInfo().total_students"></th>
                 <th class="p-2 border" colspan="2">Class I-V</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || ''"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || '0'"></th>
                 <th class="p-2 border" colspan="2">Class V-X</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || ''"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || '0'"></th>
                 <th class="p-2 border" colspan="11"></th>
               </tr>
+              {% endif %}
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border" rowspan="2">Category</th>
                 <th class="p-2 border" rowspan="2">Item Name</th>
                 <th class="p-2 border" rowspan="2">Qty.</th>
                 <th class="p-2 border" rowspan="2">Unit</th>
                 <th class="p-2 border" colspan="5">Nutrition in Ordered Items</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border" colspan="5">Class I-V Per Capita Nutrition</th>
                 <th class="p-2 border" colspan="5">Class VI-X Per Capita Nutrition</th>
+                {% endif %}
               </tr>
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border">Protein (g)</th>
@@ -164,6 +173,7 @@
                 <th class="p-2 border">Carbs (g)</th>
                 <th class="p-2 border">Calories (g)</th>
                 <th class="p-2 border">Fibres (g)</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border">Protein (g)</th>
                 <th class="p-2 border">Fat (g)</th>
                 <th class="p-2 border">Carbs (g)</th>
@@ -174,6 +184,7 @@
                 <th class="p-2 border">Carbs (g)</th>
                 <th class="p-2 border">Calories (g)</th>
                 <th class="p-2 border">Fibres (g)</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody>
@@ -188,7 +199,7 @@
                   <td class="p-2 border text-right" x-text="item.choavldf_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.enerc_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.enerc_total.toFixed(2)"></td>
-
+                  {% if user_type == '3'%}
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.protcnt_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.fatce_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.choavldf_total/currentSchool.i_v_total).toFixed(2):0"></td>
@@ -200,6 +211,7 @@
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.choavldf_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.enerc_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.enerc_total/currentSchool.vi_x_total).toFixed(2):0"></td>
+                  {% endif %}
                 </tr>
               </template>
             </tbody>
@@ -237,26 +249,35 @@
           <table id="vitaminsTable" class="w-full border-collapse text-xs md:text-sm">
             <thead class="bg-gray-100 text-[#19183B]">
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
+                {% if user_type == '3'%}
                 <th class="p-2 border">School</th>
                 <th class="p-2 border" colspan="18" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% else %}
+                <th class="p2 border">Name</th>
+                <th class="p2 border" colspan="8" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% endif %}
               </tr>
+              {% if user_type == '3'%}
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
                 <th class="p-2 border">Students</th>
                 <th class="p-2 border" style="color: black;" x-text="getSchoolInfo().total_students"></th>
                 <th class="p-2 border" colspan="2">Class I-V</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || ''"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || '0'"></th>
                 <th class="p-2 border" colspan="2">Class V-X</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || ''"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || '0'"></th>
                 <th class="p-2 border" colspan="11"></th>
               </tr>
+              {% endif %}
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border" rowspan="2">Category</th>
                 <th class="p-2 border" rowspan="2">Item Name</th>
                 <th class="p-2 border" rowspan="2">Qty.</th>
                 <th class="p-2 border" rowspan="2">Unit</th>
                 <th class="p-2 border" colspan="5">Nutrition in Ordered Items</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border" colspan="5">Class I-V Per Capita Nutrition</th>
                 <th class="p-2 border" colspan="5">Class VI-X Per Capita Nutrition</th>
+                {% endif %}
               </tr>
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border">Vit-A (µg)</th>
@@ -264,6 +285,7 @@
                 <th class="p-2 border">Vit-D (µg)</th>
                 <th class="p-2 border">Vit-E (mg)</th>
                 <th class="p-2 border">Vit-K (µg)</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border">Vit-A (µg)</th>
                 <th class="p-2 border">Vit-C (mg)</th>
                 <th class="p-2 border">Vit-D (µg)</th>
@@ -274,6 +296,7 @@
                 <th class="p-2 border">Vit-D (µg)</th>
                 <th class="p-2 border">Vit-E (mg)</th>
                 <th class="p-2 border">Vit-K (µg)</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody>
@@ -288,7 +311,7 @@
                   <td class="p-2 border text-right" x-text="item.vitd_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.vite_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.vitk_total.toFixed(2)"></td>
-
+                  {% if user_type == '3'%}
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.vita_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.vitc_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.vitd_total/currentSchool.i_v_total).toFixed(2):0"></td>
@@ -300,6 +323,7 @@
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.vitd_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.vite_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.vitk_total/currentSchool.vi_x_total).toFixed(2):0"></td>
+                  {% endif %}
                 </tr>
               </template>
             </tbody>
@@ -337,32 +361,42 @@
           <table id="mineralsTable" class="w-full border-collapse text-xs md:text-sm">
             <thead class="bg-gray-100 text-[#19183B]">
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
+                {% if user_type == '3'%}
                 <th class="p-2 border">School</th>
-                <th class="p-2 border" colspan="15" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                <th class="p-2 border" colspan="18" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% else %}
+                <th class="p-2 border">School</th>
+                <th class="p-2 border" colspan="8" style="color: black;" x-text="currentSchool?.first_name || ''"></th>
+                {% endif %}
               </tr>
+              {% if user_type == '3'%}
               <tr class="bg-gray-100 font-semibold text-[#19183B]" style="text-align: left;">
                 <th class="p-2 border">Students</th>
                 <th class="p-2 border" style="color: black;" x-text="getSchoolInfo().total_students"></th>
                 <th class="p-2 border" colspan="2">Class I-V</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || ''"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.i_v_total || '0'"></th>
                 <th class="p-2 border" colspan="2">Class V-X</th>
-                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || ''"></th>
-                <th class="p-2 border" colspan="8"></th>
+                <th class="p-2 border" style="color: black;" x-text="currentSchool?.vi_x_total || '0'"></th>
+                <th class="p-2 border" colspan="11"></th>
               </tr>
+              {% endif %}
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border" rowspan="2">Category</th>
                 <th class="p-2 border" rowspan="2">Item Name</th>
                 <th class="p-2 border" rowspan="2">Qty.</th>
                 <th class="p-2 border" rowspan="2">Unit</th>
                 <th class="p-2 border" colspan="4">Nutrition in Ordered Items</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border" colspan="4">Class I-V Per Capita Nutrition</th>
                 <th class="p-2 border" colspan="4">Class VI-X Per Capita Nutrition</th>
+                {% endif %}
               </tr>
               <tr class="bg-gray-100 text-left">
                 <th class="p-2 border">Iron (mg)</th>
                 <th class="p-2 border">Calcium (mg)</th>
                 <th class="p-2 border">Magnesium (mg)</th>
                 <th class="p-2 border">Phosphorus (mg)</th>
+                {% if user_type == '3'%}
                 <th class="p-2 border">Iron (mg)</th>
                 <th class="p-2 border">Calcium (mg)</th>
                 <th class="p-2 border">Magnesium (mg)</th>
@@ -371,6 +405,7 @@
                 <th class="p-2 border">Calcium (mg)</th>
                 <th class="p-2 border">Magnesium (mg)</th>
                 <th class="p-2 border">Phosphorus (mg)</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody>
@@ -384,7 +419,7 @@
                   <td class="p-2 border text-right" x-text="item.ca_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.mg_total.toFixed(2)"></td>
                   <td class="p-2 border text-right" x-text="item.p_total.toFixed(2)"></td>
-
+                  {% if user_type == '3'%}
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.fe_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.ca_total/currentSchool.i_v_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.i_v_total!=0?(item.mg_total/currentSchool.i_v_total).toFixed(2):0"></td>
@@ -394,6 +429,7 @@
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.ca_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.mg_total/currentSchool.vi_x_total).toFixed(2):0"></td>
                   <td class="p-2 border text-right" x-text="currentSchool.vi_x_total!=0?(item.p_total/currentSchool.vi_x_total).toFixed(2):0"></td>
+                  {% endif %}
                 </tr>
               </template>
             </tbody>

@@ -586,6 +586,7 @@ def details(request):
     calculated_schools = school_wise_nutrition_details(schools=schools)
     return_context = {
         'schools':calculated_schools,
+        'user_type':user_type,
     }
     
     return render(request, 'nutrition.html', return_context)
