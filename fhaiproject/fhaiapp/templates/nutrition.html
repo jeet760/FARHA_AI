@@ -2,33 +2,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>School Orders</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nutri Tracks — Agri-Nutrition Delivery Dashboard</title>
+
+  <!-- Tailwind (dev CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/alpinejs" defer></script>
+  <!-- Alpine -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col text-sm md:text-base" x-data="orderApp()">
-
   <!-- Header -->
   <header class="bg-white border-b shadow-md">
     <div class="max-w-7xl mx-auto px-3 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
       <div class="flex flex-col">
-        <a href="/" class="text-lg font-semibold">
+        <a href="/" class="text-xl font-semibold">
           Nutri<span class="text-[#FF9933]">Tracks</span>
         </a>
-        <span class="text-xs md:text-sm font-bold text-gray-500">
+        <span class="text-sm font-bold text-gray-500">
           Agri-Nutrition Delivery Dashboard
         </span>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="flex-grow w-[95%] max-w-7xl mx-auto py-6 space-y-6">
-
+  <!-- Main -->
+  <main class="max-w-7xl mx-auto p-6 space-y-6 flex-grow">
     <!-- School Section -->
     <div class="bg-white p-4 rounded-xl shadow-md flex flex-col gap-4">
       <!-- Row 1: Label + Dropdown -->
@@ -62,19 +66,19 @@
     <div x-show="selectedSchool" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
       <!-- Card 1: Proximate Principles -->
       <div class="bg-green-200 p-4 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition"
-           @click="openNutrition = 'proximate'">
+          @click="openNutrition = 'proximate'">
         <h2 class="text-sm md:text-base font-semibold text-gray-700">Proximate Principles and Fibres</h2>
         <p class="text-gray-500 text-xs">Click to view details</p>
       </div>
 
       <div class="bg-pink-200 p-4 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition"
-           @click="openNutrition = 'vitamins'">
+          @click="openNutrition = 'vitamins'">
         <h2 class="text-sm md:text-base font-semibold text-gray-700">Vitamins</h2>
         <p class="text-gray-500 text-xs">Click to view details</p>
       </div>
 
       <div class="bg-yellow-200 p-4 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition"
-           @click="openNutrition = 'minerals'">
+          @click="openNutrition = 'minerals'">
         <h2 class="text-sm md:text-base font-semibold text-gray-700">Minerals</h2>
         <p class="text-gray-500 text-xs">Click to view details</p>
       </div>
@@ -82,7 +86,7 @@
       <!-- 9 More Blank Cards -->
       <!-- <template x-for="n in 7" :key="n">
         <div class="bg-white p-4 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition"
-             @click="openNutrition = 'card' + n">
+            @click="openNutrition = 'card' + n">
           <h2 class="text-sm md:text-base font-semibold text-gray-700">Card <span x-text="n"></span></h2>
           <p class="text-gray-500 text-xs">Click to view details</p>
         </div>
@@ -91,7 +95,7 @@
 
     <!-- Modal -->
     <div x-show="openNutrition" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-         x-transition>
+        x-transition>
       <div class="bg-white rounded-xl shadow-lg w-[95%] max-w-6xl p-6 relative">
         <!-- Close Button -->
         <button @click="openNutrition = false"
@@ -403,7 +407,6 @@
       </div>
     </div>
   </main>
-
   <!-- Footer -->
   <footer class="bg-gray-500 text-gray-200 py-3 text-xs md:text-sm">
     <div class="w-[90%] max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
@@ -471,5 +474,6 @@
       doc.save(filename ? filename + ".pdf" : "export.pdf");
     }
   </script>
+
 </body>
 </html>

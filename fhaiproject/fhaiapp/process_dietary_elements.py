@@ -547,6 +547,13 @@ class PDE:
         # Group by category (Animal Sourced / Vegetables / Pulses)
         grouped = df.groupby("item_cat")[["vita_total","vitc_total","vitd_total","vite_total","vitk_total"]].sum()
 
+        # cols_to_sum = ["vita", "vitc", "vitd", "vite", "vitk", "vita_total","vitc_total","vitd_total","vite_total","vitk_total"]
+        # sum_row = df[cols_to_sum].sum()
+        # total_row = {col: "" for col in df.columns}
+        # for col in cols_to_sum:
+        #     total_row[col] = sum_row[col]
+        # df.loc["Total"] = total_row
+        # print(df)
         return df
 
     def process_item_minerals(item_cat_group):
