@@ -87,7 +87,7 @@ def calculate_for_students(all_users):
         user for user in all_users if user.get('userType') == '3'
     ]
     no_of_schools = len(filtered_schools)
-    school_df = pd.json_normalize(
+    school_orders = pd.json_normalize(
         filtered_schools,
         record_path='order_details',                    # explode each order detail
         meta=['id', 'first_name', 'userType',          # keep user info
@@ -110,6 +110,13 @@ def calculate_for_students(all_users):
         errors='ignore'
     )
 
+    school_df = school_orders.explode('details').reset_index(drop=True)
+
+    # Flatten 'details' dict
+    details_df = pd.json_normalize(school_df['details'])
+    school_df = pd.concat([school_df.drop(columns=['details']).reset_index(drop=True), details_df], axis=1)
+
+    
     #calculate total number of schools, students and individuals
     school_df['i_v_total'] = (
         school_df["school_info_i_students"]
@@ -141,7 +148,6 @@ def calculate_for_students(all_users):
         ['item_name', 'item_cat', 'item_unit'], as_index=False
     )['itemQty'].sum()
     food_cat_summary_labels = school_df["item_cat"].unique().tolist()
-
     return_context = {
         'school_df':school_df,
         'no_of_schools':no_of_schools,
@@ -160,7 +166,7 @@ def calculate_for_others(all_users):
     no_of_individuals = len(filtered_individuals)
     indvidual_df = pd.json_normalize(
         filtered_individuals,
-        record_path='order_details',                    # explode each order detail
+        record_path=['order_details','details'],                    # explode each order detail
         meta=['id', 'first_name', 'userType'],          # keep user info
         sep='_',
         errors='ignore'
@@ -189,9 +195,9 @@ def calculate_for_all(all_users):
     others_context = calculate_for_others(all_users=all_users)
     no_of_individuals = others_context['no_of_individuals']
 
-    total_consumers = no_of_schools+no_of_individuals
-
-    all_users_df = pd.json_normalize(
+    total_consumers = no_of_students+no_of_individuals
+    total_consumer_units = no_of_schools + no_of_individuals
+    all_users_orders = pd.json_normalize(
         all_users,
         record_path='order_details',                    # explode each order detail
         meta=['id', 'first_name', 'userType',
@@ -213,6 +219,14 @@ def calculate_for_all(all_users):
         sep='_',
         errors='ignore'
     )
+    all_users_df = all_users_orders.explode('details').reset_index(drop=True)
+
+    # Flatten 'details' dict
+    details_df = pd.json_normalize(all_users_df['details'])
+    all_users_df = pd.concat([all_users_df.drop(columns=['details']).reset_index(drop=True), details_df], axis=1)
+
+    #all_users_df.to_excel("/Users/satyajitnayak/Desktop/school_orders.xlsx", index=False)
+
     item_cat_group = all_users_df.groupby(
         ['item_name', 'item_cat', 'item_unit'], as_index=False
     )['itemQty'].sum()
@@ -225,6 +239,7 @@ def calculate_for_all(all_users):
         'no_of_students_vi_x':no_of_students_vi_x,
         'no_of_students':no_of_students,
         'total_consumers':total_consumers,
+        'total_consumer_units':total_consumer_units,
         'item_cat_group':item_cat_group,
         'food_cat_summary_labels':food_cat_summary_labels,
     }
@@ -283,6 +298,7 @@ def fetch_api_data(request, user):
         item_cat_group = all_users_data['item_cat_group']
         food_cat_summary_labels = all_users_data['food_cat_summary_labels']
         total_no_of_consumers = all_users_data['total_consumers']
+        total_consumer_units = all_users_data['total_consumer_units']
     #process dietary elements
     dietary_fibre_context = PDE.process_dietary_fibre(item_cat_group=item_cat_group)
     dietary_minerals_context = PDE.process_dietary_minerals(item_cat_group=item_cat_group)
@@ -296,6 +312,7 @@ def fetch_api_data(request, user):
         'no_of_students_i_v':no_of_students_i_v,
         'no_of_students_vi_x':no_of_students_vi_x,
         'total_no_of_consumers':total_no_of_consumers,
+        'total_consumer_units':total_consumer_units,
         'food_cat_summary_labels':food_cat_summary_labels,
         'api_data': data,
         'item_cat_group': item_cat_group,
@@ -492,6 +509,7 @@ def dashboard(request):
         'no_of_students_i_v':api_data['no_of_students_i_v'],
         'no_of_students_vi_x':api_data['no_of_students_vi_x'],
         'total_no_of_consumers':api_data['total_no_of_consumers'],
+        'total_consumer_units':api_data['total_consumer_units'],
         'mdm_target_calories_data':json.dumps(mdm_target_calories_data),
         'mdm_target_protein_data':json.dumps(mdm_target_protein_data),
         'mdm_achieved_calories_data':json.dumps(mdm_achieved_calories_data),
@@ -543,7 +561,7 @@ def dashboard(request):
 def school_wise_nutrition_details(schools):
     item_cat_group = []
     for school in schools:
-        item_cat_group = school['order_details']
+        item_cat_group = school['order_details'][0]['details']
         nutrition_df = pd.DataFrame(item_cat_group)
         proximates_df = PDE.process_item_proximates(item_cat_group=nutrition_df)
         vitamins_df = PDE.process_item_vitamins(item_cat_group=nutrition_df)
