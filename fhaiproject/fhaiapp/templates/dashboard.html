@@ -58,8 +58,63 @@
         </div>
 
 
+        <!-- <div x-data="dateRangePicker()" class="max-w-xl mx-auto p-4 bg-white rounded shadow"> -->
+          <div x-data="dateRangePicker()" class="flex flex-wrap gap-6 items-center hidden">
+            <!-- Start date -->
+            <div class="flex items-center gap-2">
+              <label class="text-sm font-medium whitespace-nowrap">From:</label>
+              <input
+                type="date"
+                x-model="start"
+                :max="end || maxAllowed"
+                :min="minAllowed"
+                class="px-2 py-1 border rounded text-sm"
+                @change="onChange()"
+              />
+            </div>
+
+            <!-- End date -->
+            <div class="flex items-center gap-2">
+              <label class="text-sm font-medium whitespace-nowrap">To:</label>
+              <input
+                type="date"
+                x-model="end"
+                :min="start || minAllowed"
+                :max="maxAllowed"
+                class="px-2 py-1 border rounded text-sm"
+                @change="onChange()"
+              />
+            </div>
+
+            <!-- Apply button -->
+            <div>
+              <button
+                type="button"
+                :class="valid ? 'bg-[#047857] text-white' : 'bg-gray-300 text-gray-700 cursor-not-allowed'"
+                class="ml-2 px-3 py-1 rounded text-sm"
+                :disabled="!valid"
+                @click="apply()">
+                Apply
+              </button>
+            </div>
+
+            <!-- Inline helper -->
+            <div class="mt-3 text-sm">
+              <template x-if="!valid">
+                <div class="text-red-600">Please ensure Start ≤ End and both dates are valid.</div>
+              </template>
+              <template x-if="valid">
+                <div class="text-green-600">
+                  Showing results from <strong x-text="pretty(start)"></strong> to <strong x-text="pretty(end)"></strong>
+                </div>
+              </template>
+            </div>
+          </div>
+        <!-- </div> -->
+
+
         <!-- Filters -->
-        <div class="flex items-center gap-2 w-full md:w-auto">
+        <!-- <div class="flex items-center gap-2 w-full md:w-auto">
           <select x-model="user" @change="onConsumerTypeChange" class="rounded border px-3 py-1 text-sm">
             <option value="">All Consumers</option>
             <template x-for="u in userList" :key="u.code">
@@ -67,65 +122,122 @@
             </template>
           </select>
           <button @click="applyFilters" class="ml-2 bg-[#047857] text-white px-3 py-1 rounded text-sm">Apply</button>
-        </div>
+        </div> -->
       </div>
     </header>
 
     <!-- Main -->
     <main class="max-w-7xl mx-auto p-6 space-y-6">
-      
-      <!-- Top KPI Cards: horizontal scroll on mobile -->
-      <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <!-- Card 1 -->
-        <div class="consumer card min-h-[100px] bg-gradient-to-r from-slate-400 to-slate-500 text-white rounded-2xl shadow-lg p-2 flex flex-col space-y-0.5">
-          <div class="text-xs uppercase tracking-wide opacity-90">Consumers Reached</div>
-          <div class="flex items-center justify-between text-l">
-            <span>School:</span>
-            <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.schools)">0</span>
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-col gap-4">
+        <span class="font-semibold">Overall Nutrition Delivered</span>
+        <!-- Top KPI Cards: horizontal scroll on mobile -->
+        <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <!-- Card 1 -->
+          <div class="consumer card min-h-[100px] bg-gradient-to-r from-slate-400 to-slate-500 text-white rounded-2xl shadow-lg p-2 flex flex-col space-y-0.5">
+            <div class="text-xs uppercase tracking-wide opacity-90">Consumers Reached</div>
+            <div class="flex items-center justify-between text-l">
+              <span>School:</span>
+              <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.schools)">0</span>
+            </div>
+            
+            <div class="flex items-center justify-between text-l">
+              <span>Others:</span>
+              <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.individuals)">0</span>
+            </div>
+
+            <div class="flex items-center justify-between text-l">
+              <span id="total_beneficiaries">Total:</span>
+              <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.beneficiaries)">0</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Calories Delivered (kcal)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.energy)">0</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Carbohydrates Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.carb)">0</div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Protein Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.protein)">0</div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Fat Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.fat)">0</div>
+          </div>
+
+          <!-- Card 6 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Fibre Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.fibre)">0</div>
+          </div>
+
+          <!-- Card 7 -->
+          <!-- Card 7 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Vitamin A Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.vita)">0</div>
+          </div>
+
+          <!-- Card 8 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-fuchsia-400 to-violet-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Vitamin C Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.vitc)">0</div>
+          </div>
+
+          <!-- Card 9 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-gray-500 to-zinc-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Vitamin D Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.vitd)">0</div>
+          </div>
+
+          <!-- Card 10 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-cyan-400 to-blue-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Vitamin E Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.vite)">0</div>
+          </div>
+
+          <!-- Card 11 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-slate-400 to-gray-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Vitamin K Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.vitk)">0</div>
+          </div>
+
+          <!-- Card 12 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-neutral-500 to-neutral-800 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Iron Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.iron)">0</div>
           </div>
           
-          <div class="flex items-center justify-between text-l">
-            <span>Others:</span>
-            <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.individuals)">0</span>
+          <!-- Card 13 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-zinc-700 to-zinc-400 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Calcium Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.calcium)">0</div>
+          </div>
+          
+          <!-- Card 14 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-teal-500 to-cyan-300 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Magnesium Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.magnesium)">0</div>
           </div>
 
-          <div class="flex items-center justify-between text-l">
-            <span id="total_beneficiaries">Total:</span>
-            <span class="beneficiaries kpi font-bold" x-text="formatNumber(kpi.beneficiaries)">0</span>
+          <!-- Card 11 -->
+          <div class="card min-h-[100px] bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
+            <div class="text-xs uppercase tracking-wide opacity-90">Total Phosphorus Delivered (g)</div>
+            <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.phosphorus)">0</div>
           </div>
-        </div>
 
-        <!-- Card 2 -->
-        <div class="card min-h-[100px] bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
-          <div class="text-xs uppercase tracking-wide opacity-90">Total Calories Delivered (kcal)</div>
-          <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.energy)">0</div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="card min-h-[100px] bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
-          <div class="text-xs uppercase tracking-wide opacity-90">Total Carbohydrates Delivered (g)</div>
-          <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.carb)">0</div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="card min-h-[100px] bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
-          <div class="text-xs uppercase tracking-wide opacity-90">Total Protein Delivered (g)</div>
-          <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.protein)">0</div>
-        </div>
-
-        <!-- Card 5 -->
-        <div class="card min-h-[100px] bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
-          <div class="text-xs uppercase tracking-wide opacity-90">Total Fat Delivered (g)</div>
-          <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.fat)">0</div>
-        </div>
-
-        <!-- Card 6 -->
-        <div class="card min-h-[100px] bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl shadow-lg p-4 flex flex-col justify-between">
-          <div class="text-xs uppercase tracking-wide opacity-90">Total Fibre Delivered (g)</div>
-          <div class="kpi text-xl font-bold" x-text="formatNumber(kpi.fibre)">0</div>
-        </div>
-      </section>
-
+        </section>
+      </div>
       <!-- Bottom: charts & maps -->
       <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Chart Cards -->
@@ -254,6 +366,15 @@
         { name: 'Schools', code: 3 },
         { name: 'Others', code: 5 },
       ],
+      frequencyList:[
+        {name:'Daily', code:1},
+        {name:'Weekly', code:2},
+        {name:'Fortnightly', code:3},
+        {name:'Monthly', code:4},
+        {name:'Quarterly', code:5},
+        {name:'Half-yearly', code:6},
+        {name:'Annually', code:7},
+      ],
       districtList: [],
       subdistrictList: [],
       
@@ -275,7 +396,16 @@
         fat:parseFloat(JSON.parse('{{ total_fat_content|safe|escapejs }}')).toFixed(2),//(Number(parseFloat(JSON.parse('{{ total_fat_content|safe|escapejs }}')).toFixed(2))).toLocaleString("en-IN"), 
         fat_per_beneficiary: parseFloat(JSON.parse('{{ unit_fat_content|safe|escapejs }}')).toFixed(2), 
         fibre:parseFloat(JSON.parse('{{ total_fibre_content|safe|escapejs }}')).toFixed(2),//(Number(parseFloat(JSON.parse('{{ total_fibre_content|safe|escapejs }}')).toFixed(2))).toLocaleString("en-IN"), 
-        fibre_per_beneficiary: parseFloat(JSON.parse('{{ unit_fibre_content|safe|escapejs }}')).toFixed(2), 
+        fibre_per_beneficiary: parseFloat(JSON.parse('{{ unit_fibre_content|safe|escapejs }}')).toFixed(2),
+        vita:parseFloat(JSON.parse('{{ total_vita_content|safe|escapejs }}')).toFixed(2),
+        vitc:parseFloat(JSON.parse('{{ total_vitc_content|safe|escapejs }}')).toFixed(2),
+        vitd:parseFloat(JSON.parse('{{ total_vitd_content|safe|escapejs }}')).toFixed(2),
+        vite:parseFloat(JSON.parse('{{ total_vite_content|safe|escapejs }}')).toFixed(2),
+        vitk:parseFloat(JSON.parse('{{ total_vitk_content|safe|escapejs }}')).toFixed(2),
+        iron:parseFloat(JSON.parse('{{ total_fe_content|safe|escapejs }}')).toFixed(2),
+        calcium:parseFloat(JSON.parse('{{ total_ca_content|safe|escapejs }}')).toFixed(2),
+        magnesium:parseFloat(JSON.parse('{{ total_mg_content|safe|escapejs }}')).toFixed(2),
+        phosphorus:parseFloat(JSON.parse('{{ total_p_content|safe|escapejs }}')).toFixed(2),
         protein_per_meal: 12, 
         budget_spent_formatted: '₹ 12,34,567', 
         budget_utilization: 78, 
@@ -329,7 +459,9 @@
       onConsumerTypeChange(){
       
       },
+      onFrequencyChange(){
 
+      },
       onStateChange() {
         this.districtList.length = 0; // clear previous selections
         this.districtList = [];
@@ -768,6 +900,108 @@
       }
     };
   }
+  function dateRangePicker() {
+    const today = new Date();
+    const iso = (d) => d.toISOString().slice(0, 10);
+
+    return {
+      // defaults: last 7 days
+      end: iso(today),
+      start: iso(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)),
+
+      // allowed bounds (optional)
+      minAllowed: '2020-01-01',
+      maxAllowed: iso(today),
+
+      // computed validation
+      get valid() {
+        if (!this.start || !this.end) return false;
+        try {
+          return this.start <= this.end && this.start >= this.minAllowed && this.end <= this.maxAllowed;
+        } catch (e) {
+          return false;
+        }
+      },
+
+      // small helper to display friendly date
+      pretty(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString();
+      },
+
+      onChange() {
+        // keep start/end within allowed bounds automatically
+        if (this.start && this.start < this.minAllowed) this.start = this.minAllowed;
+        if (this.end && this.end > this.maxAllowed) this.end = this.maxAllowed;
+
+        // if user accidentally sets start > end, auto adjust end to start (or vice versa)
+        if (this.start && this.end && this.start > this.end) {
+          // choose a policy: set end = start
+          this.end = this.start;
+        }
+      },
+
+      apply() {
+        if (!this.valid) return;
+        // Example: dispatch a custom event with the dates
+        window.dispatchEvent(new CustomEvent('date-range-applied', {
+          detail: { start: this.start, end: this.end }
+        }));
+
+        // Or call a function to fetch filtered data:
+        // fetchData({ start: this.start, end: this.end });
+
+        // Visual confirmation (optional)
+        console.log('Applying date filter:', this.start, this.end);
+        alert(`Filtering from ${this.pretty(this.start)} to ${this.pretty(this.end)}`);
+
+        
+        const fetchURL = "{% url 'dashboard' %}";
+        fetch(fetchURL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')  // use this in production
+        },
+        body: JSON.stringify({
+            start: this.start,
+            end: this.end
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert('hello');
+            // if (data.redirect_url) {
+            //     window.location.href = data.redirect_url;
+            // }
+        })
+        .catch(error => console.error('Error:', error));
+      }
+    }
+  }
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Example listener elsewhere in the app:
+  window.addEventListener('date-range-applied', (e) => {
+    const { start, end } = e.detail;
+    // call your API or filter your DataFrame here
+    console.log('Received date-range-applied', start, end);
+    // e.g., call fetchFilteredOrders(start, end)
+  });
   </script>
 
 </body>

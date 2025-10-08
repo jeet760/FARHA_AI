@@ -10,6 +10,7 @@ import socket
 from .nutrients import NutritionReport
 from .process_dietary_elements import PDE
 from .farha_ai_engine import FarhaAIEngine
+from datetime import date
 
 # Create your views here.
 def site_online(host='farmerharvest.in', port=443, timeout=3):
@@ -82,7 +83,7 @@ rda_micro_ref_minerals = {
     "phosphorus": 700,
 }
 
-def calculate_for_students(all_users):
+def calculate_for_students(all_users, start_date, end_date):
     filtered_schools = [
         user for user in all_users if user.get('userType') == '3'
     ]
@@ -116,7 +117,17 @@ def calculate_for_students(all_users):
     details_df = pd.json_normalize(school_df['details'])
     school_df = pd.concat([school_df.drop(columns=['details']).reset_index(drop=True), details_df], axis=1)
 
-    
+    # Convert delivery_date to datetime
+    school_df["delivery_date"] = pd.to_datetime(school_df["delivery_date"])
+
+    # Define date range
+    # start_date = "2025-09-01"
+    # end_date = "2025-09-25"
+    school_df = school_df[
+        (school_df["delivery_date"] >= start_date) & 
+        (school_df["delivery_date"] <= end_date)
+    ]
+
     #calculate total number of schools, students and individuals
     school_df['i_v_total'] = (
         school_df["school_info_i_students"]
@@ -159,7 +170,7 @@ def calculate_for_students(all_users):
     }
     return return_context
 
-def calculate_for_others(all_users):
+def calculate_for_others(all_users, start_date, end_date):
     filtered_individuals = [
         user for user in all_users if user.get('userType') == '5'
     ]
@@ -167,11 +178,25 @@ def calculate_for_others(all_users):
     indvidual_df = pd.json_normalize(
         filtered_individuals,
         record_path=['order_details','details'],                    # explode each order detail
-        meta=['id', 'first_name', 'userType'],          # keep user info
+        meta=['id', 'first_name', 'userType',
+              ['order_details', 'delivery_date']],          # keep user info
         sep='_',
         errors='ignore'
     )
     no_of_individuals = indvidual_df['first_name'].nunique()    #total individuals
+
+    # Convert delivery_date to datetime
+    indvidual_df["order_details_delivery_date"] = pd.to_datetime(indvidual_df["order_details_delivery_date"])
+
+    # Define date range
+    # start_date = "2025-09-01"
+    # end_date = "2025-09-25"
+    indvidual_df = indvidual_df[
+        (indvidual_df["order_details_delivery_date"] >= start_date) & 
+        (indvidual_df["order_details_delivery_date"] <= end_date)
+    ]
+
+
     item_cat_group = indvidual_df.groupby(
         ['item_name', 'item_cat', 'item_unit'], as_index=False
     )['itemQty'].sum()
@@ -184,15 +209,15 @@ def calculate_for_others(all_users):
     }
     return return_context
 
-def calculate_for_all(all_users):
-    school_context = calculate_for_students(all_users=all_users)
+def calculate_for_all(all_users, start_date, end_date):
+    school_context = calculate_for_students(all_users=all_users, start_date=start_date, end_date=end_date)
     school_df = school_context['school_df']
     no_of_schools = school_context['no_of_schools']
     no_of_students_i_v = school_context['no_of_students_i_v']
     no_of_students_vi_x = school_context['no_of_students_vi_x']
     no_of_students = school_context['no_of_students']
     
-    others_context = calculate_for_others(all_users=all_users)
+    others_context = calculate_for_others(all_users=all_users, start_date=start_date, end_date=end_date)
     no_of_individuals = others_context['no_of_individuals']
 
     total_consumers = no_of_students+no_of_individuals
@@ -225,7 +250,16 @@ def calculate_for_all(all_users):
     details_df = pd.json_normalize(all_users_df['details'])
     all_users_df = pd.concat([all_users_df.drop(columns=['details']).reset_index(drop=True), details_df], axis=1)
 
-    #all_users_df.to_excel("/Users/satyajitnayak/Desktop/school_orders.xlsx", index=False)
+    # Convert delivery_date to datetime
+    all_users_df["delivery_date"] = pd.to_datetime(all_users_df["delivery_date"])
+
+    # Define date range
+    # start_date = "2025-09-01"
+    # end_date = "2025-09-25"
+    all_users_df = all_users_df[
+        (all_users_df["delivery_date"] >= start_date) & 
+        (all_users_df["delivery_date"] <= end_date)
+    ]
 
     item_cat_group = all_users_df.groupby(
         ['item_name', 'item_cat', 'item_unit'], as_index=False
@@ -245,7 +279,7 @@ def calculate_for_all(all_users):
     }
     return return_context
 
-def fetch_api_data(request, user):
+def fetch_api_data(request, user, selected_start_date, selected_end_date):
     # API URL (first page)
     url = "https://farmerharvest.in/api/orders/"
     if user and user != '0':
@@ -270,7 +304,7 @@ def fetch_api_data(request, user):
     
     if user == '3':
         #calculation for students
-        student_data = calculate_for_students(all_users=all_users)
+        student_data = calculate_for_students(all_users=all_users, start_date=selected_start_date, end_date=selected_end_date)
         no_of_schools = student_data['no_of_schools']
         no_of_students_i_v = student_data['no_of_students_i_v']
         no_of_students_vi_x = student_data['no_of_students_vi_x']
@@ -278,18 +312,20 @@ def fetch_api_data(request, user):
         item_cat_group = student_data['item_cat_group']
         food_cat_summary_labels = student_data['food_cat_summary_labels']
         total_no_of_consumers = no_of_students
+        total_consumer_units = no_of_schools
         no_of_individuals = 0
     elif user == '5':
         #calculation for others (individuals)
-        others_data = calculate_for_others(all_users=all_users)
+        others_data = calculate_for_others(all_users=all_users, start_date=selected_start_date, end_date=selected_end_date)
         no_of_individuals = others_data['no_of_individuals']
         item_cat_group = others_data['item_cat_group']
         food_cat_summary_labels = others_data['food_cat_summary_labels']
         total_no_of_consumers = no_of_individuals
+        total_consumer_units = no_of_individuals
         no_of_schools, no_of_students, no_of_students_i_v, no_of_students_vi_x = 0, 0, 0, 0
     else:
         #calculation for others (individuals)
-        all_users_data = calculate_for_all(all_users=all_users)
+        all_users_data = calculate_for_all(all_users=all_users, start_date=selected_start_date, end_date=selected_end_date)
         no_of_individuals = all_users_data['no_of_individuals']
         no_of_schools = all_users_data['no_of_schools']
         no_of_students_i_v = all_users_data['no_of_students_i_v']
@@ -299,13 +335,13 @@ def fetch_api_data(request, user):
         food_cat_summary_labels = all_users_data['food_cat_summary_labels']
         total_no_of_consumers = all_users_data['total_consumers']
         total_consumer_units = all_users_data['total_consumer_units']
-    #process dietary elements
-    dietary_fibre_context = PDE.process_dietary_fibre(item_cat_group=item_cat_group)
-    dietary_minerals_context = PDE.process_dietary_minerals(item_cat_group=item_cat_group)
-    dietary_vitamins_context = PDE.process_dietary_vitamins(item_cat_group=item_cat_group)
+
+    fetched = True
+    if item_cat_group.__len__() == 0:
+        fetched = False
 
     return_context = {
-        'Data':True,
+        'Data':fetched,
         'no_of_schools': no_of_schools,
         'no_of_individuals': 0 if not no_of_individuals else no_of_individuals,
         'no_of_students': no_of_students,
@@ -316,6 +352,15 @@ def fetch_api_data(request, user):
         'food_cat_summary_labels':food_cat_summary_labels,
         'api_data': data,
         'item_cat_group': item_cat_group,
+    }
+    return return_context
+
+def calculate_total_nutrition_from_order(item_cat_group):
+    #process dietary elements
+    dietary_fibre_context = PDE.process_dietary_fibre(item_cat_group=item_cat_group)
+    dietary_minerals_context = PDE.process_dietary_minerals(item_cat_group=item_cat_group)
+    dietary_vitamins_context = PDE.process_dietary_vitamins(item_cat_group=item_cat_group)
+    return_context = {
         'dietary_fibre_context':dietary_fibre_context,
         'total_protein_content': dietary_fibre_context['total_protein_content'],#dietary fibre starts
         'total_fat_content': dietary_fibre_context['total_fat_content'],
@@ -355,27 +400,36 @@ def dashboard(request):
     else:
         user_type = request.GET.get('user', '0')
 
-    api_data = fetch_api_data(request, user=user_type)
+    #fetch all order related data from the api
+    start_date, end_date = pd.to_datetime("2025-01-01").tz_localize("Asia/Kolkata"), pd.to_datetime(date.today().strftime("%Y-%m-%d")).tz_localize("Asia/Kolkata")
+    if request.method == "POST":
+        date_data = json.loads(request.body)
+        start_date = date_data.get('start')
+        end_date = date_data.get('end')
+
+    api_data = fetch_api_data(request, user=user_type, selected_start_date=start_date, selected_end_date=end_date)
     if api_data['Data'] == False: #checks whether data found or not
         messages.error(request, 'Data not found!')
         return HttpResponse('Data not found!')
 
+    #calculate the nutritional values from the order
+    calculated_nutritional_data = calculate_total_nutrition_from_order(api_data['item_cat_group'])
     # RDA references and coverage
     nutrient_data = [
-        {'category': 'macros', 'name': 'Energy', 'unit': 'kcal', 'amount': api_data['total_calories'], 'rda': rda_macro_ref['energy'], 'rda_percentage': ((api_data['total_calories']/api_data['total_no_of_consumers'])/rda_macro_ref['energy'])*100 if rda_macro_ref['energy'] > 0 else 0},
-        {'category': 'macros', 'name': 'Carbohydrates', 'unit': 'g', 'amount': api_data['total_carb_content'], 'rda': rda_macro_ref['carbohydrates'], 'rda_percentage': ((api_data['total_carb_content']/api_data['total_no_of_consumers'])/rda_macro_ref['carbohydrates'])*100 if rda_macro_ref['carbohydrates'] > 0 else 0},
-        {'category': 'macros', 'name': 'Protein', 'unit': 'g', 'amount': api_data['total_protein_content'], 'rda': rda_macro_ref['protein'], 'rda_percentage': ((api_data['total_protein_content']/api_data['total_no_of_consumers'])/rda_macro_ref['protein'])*100 if rda_macro_ref['protein'] > 0 else 0},
-        {'category': 'macros', 'name': 'Fat', 'unit': 'g', 'amount': api_data['total_fat_content'], 'rda': rda_macro_ref['fat'], 'rda_percentage': ((api_data['total_fat_content']/api_data['total_no_of_consumers'])/rda_macro_ref['fat'])*100 if rda_macro_ref['fat'] > 0 else 0},
-        {'category': 'macros', 'name': 'Fibre', 'unit': 'g', 'amount': api_data['total_fibre_content'], 'rda': rda_macro_ref['fibre'], 'rda_percentage': ((api_data['total_fibre_content']/api_data['total_no_of_consumers'])/rda_macro_ref['fibre'])*100 if rda_macro_ref['fibre'] > 0 else 0},
-        {'category': 'vitamins', 'name': 'Vit-A', 'unit': 'µg', 'amount': api_data['total_vita_content'], 'rda': rda_micro_ref_vitamins['vit-a'], 'rda_percentage': ((api_data['total_vita_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-a'])*100 if rda_micro_ref_vitamins['vit-a'] > 0 else 0},
-        {'category': 'vitamins', 'name': 'Vit-D', 'unit': 'µg', 'amount': api_data['total_vitd_content'], 'rda': rda_micro_ref_vitamins['vit-d'], 'rda_percentage': ((api_data['total_vitd_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-d'])*100 if rda_micro_ref_vitamins['vit-d'] > 0 else 0},
-        {'category': 'vitamins', 'name': 'Vit-E', 'unit': 'mg', 'amount': api_data['total_vite_content'], 'rda': rda_micro_ref_vitamins['vit-e'], 'rda_percentage': ((api_data['total_vite_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-e'])*100 if rda_micro_ref_vitamins['vit-e'] > 0 else 0},
-        {'category': 'vitamins', 'name': 'Vit-K', 'unit': 'µg', 'amount': api_data['total_vitk_content'], 'rda': rda_micro_ref_vitamins['vit-k'], 'rda_percentage': ((api_data['total_vitk_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-k'])*100 if rda_micro_ref_vitamins['vit-k'] > 0 else 0},
-        {'category': 'vitamins', 'name': 'Vit-C', 'unit': 'mg', 'amount': api_data['total_vitc_content'], 'rda': rda_micro_ref_vitamins['vit-c'], 'rda_percentage': ((api_data['total_vitc_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-c'])*100 if rda_micro_ref_vitamins['vit-c'] > 0 else 0},
-        {'category': 'minerals', 'name': 'Iron', 'unit': 'mg', 'amount': api_data['total_fe_content'], 'rda': rda_micro_ref_minerals['iron'], 'rda_percentage': ((api_data['total_fe_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['iron'])*100 if rda_micro_ref_minerals['iron'] > 0 else 0},
-        {'category': 'minerals', 'name': 'Calcium', 'unit': 'mg', 'amount': api_data['total_ca_content'], 'rda': rda_micro_ref_minerals['calcium'], 'rda_percentage': ((api_data['total_ca_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['calcium'])*100 if rda_micro_ref_minerals['calcium'] > 0 else 0},
-        {'category': 'minerals', 'name': 'Magnesium', 'unit': 'mg', 'amount': api_data['total_mg_content'], 'rda': rda_micro_ref_minerals['magnesium'], 'rda_percentage': ((api_data['total_mg_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['magnesium'])*100 if rda_micro_ref_minerals['magnesium'] > 0 else 0},
-        {'category': 'minerals', 'name': 'Phosphorus', 'unit': 'mg', 'amount': api_data['total_p_content'], 'rda': rda_micro_ref_minerals['phosphorus'], 'rda_percentage': ((api_data['total_p_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['phosphorus'])*100 if rda_micro_ref_minerals['phosphorus'] > 0 else 0},
+        {'category': 'macros', 'name': 'Energy', 'unit': 'kcal', 'amount': calculated_nutritional_data['total_calories'], 'rda': rda_macro_ref['energy'], 'rda_percentage': ((calculated_nutritional_data['total_calories']/api_data['total_no_of_consumers'])/rda_macro_ref['energy'])*100 if rda_macro_ref['energy'] > 0 else 0},
+        {'category': 'macros', 'name': 'Carbohydrates', 'unit': 'g', 'amount': calculated_nutritional_data['total_carb_content'], 'rda': rda_macro_ref['carbohydrates'], 'rda_percentage': ((calculated_nutritional_data['total_carb_content']/api_data['total_no_of_consumers'])/rda_macro_ref['carbohydrates'])*100 if rda_macro_ref['carbohydrates'] > 0 else 0},
+        {'category': 'macros', 'name': 'Protein', 'unit': 'g', 'amount': calculated_nutritional_data['total_protein_content'], 'rda': rda_macro_ref['protein'], 'rda_percentage': ((calculated_nutritional_data['total_protein_content']/api_data['total_no_of_consumers'])/rda_macro_ref['protein'])*100 if rda_macro_ref['protein'] > 0 else 0},
+        {'category': 'macros', 'name': 'Fat', 'unit': 'g', 'amount': calculated_nutritional_data['total_fat_content'], 'rda': rda_macro_ref['fat'], 'rda_percentage': ((calculated_nutritional_data['total_fat_content']/api_data['total_no_of_consumers'])/rda_macro_ref['fat'])*100 if rda_macro_ref['fat'] > 0 else 0},
+        {'category': 'macros', 'name': 'Fibre', 'unit': 'g', 'amount': calculated_nutritional_data['total_fibre_content'], 'rda': rda_macro_ref['fibre'], 'rda_percentage': ((calculated_nutritional_data['total_fibre_content']/api_data['total_no_of_consumers'])/rda_macro_ref['fibre'])*100 if rda_macro_ref['fibre'] > 0 else 0},
+        {'category': 'vitamins', 'name': 'Vit-A', 'unit': 'µg', 'amount': calculated_nutritional_data['total_vita_content'], 'rda': rda_micro_ref_vitamins['vit-a'], 'rda_percentage': ((calculated_nutritional_data['total_vita_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-a'])*100 if rda_micro_ref_vitamins['vit-a'] > 0 else 0},
+        {'category': 'vitamins', 'name': 'Vit-D', 'unit': 'µg', 'amount': calculated_nutritional_data['total_vitd_content'], 'rda': rda_micro_ref_vitamins['vit-d'], 'rda_percentage': ((calculated_nutritional_data['total_vitd_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-d'])*100 if rda_micro_ref_vitamins['vit-d'] > 0 else 0},
+        {'category': 'vitamins', 'name': 'Vit-E', 'unit': 'mg', 'amount': calculated_nutritional_data['total_vite_content'], 'rda': rda_micro_ref_vitamins['vit-e'], 'rda_percentage': ((calculated_nutritional_data['total_vite_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-e'])*100 if rda_micro_ref_vitamins['vit-e'] > 0 else 0},
+        {'category': 'vitamins', 'name': 'Vit-K', 'unit': 'µg', 'amount': calculated_nutritional_data['total_vitk_content'], 'rda': rda_micro_ref_vitamins['vit-k'], 'rda_percentage': ((calculated_nutritional_data['total_vitk_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-k'])*100 if rda_micro_ref_vitamins['vit-k'] > 0 else 0},
+        {'category': 'vitamins', 'name': 'Vit-C', 'unit': 'mg', 'amount': calculated_nutritional_data['total_vitc_content'], 'rda': rda_micro_ref_vitamins['vit-c'], 'rda_percentage': ((calculated_nutritional_data['total_vitc_content']/api_data['total_no_of_consumers'])/rda_micro_ref_vitamins['vit-c'])*100 if rda_micro_ref_vitamins['vit-c'] > 0 else 0},
+        {'category': 'minerals', 'name': 'Iron', 'unit': 'mg', 'amount': calculated_nutritional_data['total_fe_content'], 'rda': rda_micro_ref_minerals['iron'], 'rda_percentage': ((calculated_nutritional_data['total_fe_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['iron'])*100 if rda_micro_ref_minerals['iron'] > 0 else 0},
+        {'category': 'minerals', 'name': 'Calcium', 'unit': 'mg', 'amount': calculated_nutritional_data['total_ca_content'], 'rda': rda_micro_ref_minerals['calcium'], 'rda_percentage': ((calculated_nutritional_data['total_ca_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['calcium'])*100 if rda_micro_ref_minerals['calcium'] > 0 else 0},
+        {'category': 'minerals', 'name': 'Magnesium', 'unit': 'mg', 'amount': calculated_nutritional_data['total_mg_content'], 'rda': rda_micro_ref_minerals['magnesium'], 'rda_percentage': ((calculated_nutritional_data['total_mg_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['magnesium'])*100 if rda_micro_ref_minerals['magnesium'] > 0 else 0},
+        {'category': 'minerals', 'name': 'Phosphorus', 'unit': 'mg', 'amount': calculated_nutritional_data['total_p_content'], 'rda': rda_micro_ref_minerals['phosphorus'], 'rda_percentage': ((calculated_nutritional_data['total_p_content']/api_data['total_no_of_consumers'])/rda_micro_ref_minerals['phosphorus'])*100 if rda_micro_ref_minerals['phosphorus'] > 0 else 0},
     ]
 
     report = NutritionReport.from_list(nutrient_data)
@@ -433,22 +487,22 @@ def dashboard(request):
     unit_rice_protein_vi_x = 12*6
 
     #macro
-    total_calories = api_data['total_calories']
-    total_carb_content = api_data['total_carb_content']
-    total_protein_content = api_data['total_protein_content']
-    total_fat_content = api_data['total_fat_content']
-    total_fibre_content = api_data['total_fibre_content']
+    total_calories = calculated_nutritional_data['total_calories']
+    total_carb_content = calculated_nutritional_data['total_carb_content']
+    total_protein_content = calculated_nutritional_data['total_protein_content']
+    total_fat_content = calculated_nutritional_data['total_fat_content']
+    total_fibre_content = calculated_nutritional_data['total_fibre_content']
     #micro-vitamins
-    total_vit_a_content = api_data['total_vita_content']  # Placeholder, as vitamin A content is not calculated in the current logic
-    total_vit_d_content = api_data['total_vitd_content']  #
-    total_vit_e_content = api_data['total_vite_content']  #
-    total_vit_k_content = api_data['total_vitk_content']  #
-    total_vit_c_content = api_data['total_vitc_content']  #
+    total_vita_content = calculated_nutritional_data['total_vita_content']  # Placeholder, as vitamin A content is not calculated in the current logic
+    total_vitd_content = calculated_nutritional_data['total_vitd_content']  #
+    total_vite_content = calculated_nutritional_data['total_vite_content']  #
+    total_vitk_content = calculated_nutritional_data['total_vitk_content']  #
+    total_vitc_content = calculated_nutritional_data['total_vitc_content']  #
     #micro-minerals
-    total_iron_content = api_data['total_fe_content']  # Placeholder, as iron content is not calculated in the current logic
-    total_calcium_content = api_data['total_ca_content']  # Placeholder, as calcium content is not calculated in the current logic
-    total_magnesium_content = api_data['total_mg_content']  # Placeholder, as sodium content is not calculated in the current logic
-    total_phosphorus_content = api_data['total_p_content']
+    total_iron_content = calculated_nutritional_data['total_fe_content']  # Placeholder, as iron content is not calculated in the current logic
+    total_calcium_content = calculated_nutritional_data['total_ca_content']  # Placeholder, as calcium content is not calculated in the current logic
+    total_magnesium_content = calculated_nutritional_data['total_mg_content']  # Placeholder, as sodium content is not calculated in the current logic
+    total_phosphorus_content = calculated_nutritional_data['total_p_content']
 
     #macro nutrients
     unit_calories = total_calories / api_data['total_no_of_consumers']
@@ -458,11 +512,11 @@ def dashboard(request):
     unit_fibre_content = total_fibre_content / api_data['total_no_of_consumers']
 
     #micro nutrients-vitamins
-    unit_vit_a_content = total_vit_a_content / api_data['total_no_of_consumers']
-    unit_vit_d_content = total_vit_d_content / api_data['total_no_of_consumers']
-    unit_vit_e_content = total_vit_e_content / api_data['total_no_of_consumers']
-    unit_vit_k_content = total_vit_k_content / api_data['total_no_of_consumers']
-    unit_vit_c_content = total_vit_c_content / api_data['total_no_of_consumers']
+    unit_vita_content = total_vita_content / api_data['total_no_of_consumers']
+    unit_vitd_content = total_vitd_content / api_data['total_no_of_consumers']
+    unit_vite_content = total_vite_content / api_data['total_no_of_consumers']
+    unit_vitk_content = total_vitk_content / api_data['total_no_of_consumers']
+    unit_vitc_content = total_vitc_content / api_data['total_no_of_consumers']
 
     #micro nutrients-minerals
     unit_iron_content = total_iron_content / api_data['total_no_of_consumers']
@@ -516,36 +570,42 @@ def dashboard(request):
         'mdm_achieved_protein_data':json.dumps(mdm_achieved_protein_data),
 
         'food_cat_summary_labels':json.dumps(api_data['food_cat_summary_labels']),
-        'food_cat_total_carb_list':json.dumps(api_data['dietary_fibre_context']['food_cat_total_carb_list']),
-        'food_cat_total_protein_list':json.dumps(api_data['dietary_fibre_context']['food_cat_total_protein_list']),
-        'food_cat_total_fat_list':json.dumps(api_data['dietary_fibre_context']['food_cat_total_fat_list']),
-        'food_cat_total_fiber_list':json.dumps(api_data['dietary_fibre_context']['food_cat_total_fiber_list']),
+        'food_cat_total_carb_list':json.dumps(calculated_nutritional_data['dietary_fibre_context']['food_cat_total_carb_list']),
+        'food_cat_total_protein_list':json.dumps(calculated_nutritional_data['dietary_fibre_context']['food_cat_total_protein_list']),
+        'food_cat_total_fat_list':json.dumps(calculated_nutritional_data['dietary_fibre_context']['food_cat_total_fat_list']),
+        'food_cat_total_fiber_list':json.dumps(calculated_nutritional_data['dietary_fibre_context']['food_cat_total_fiber_list']),
 
-        'total_protein_content': f'{api_data['total_protein_content']}',
-        'total_fat_content': f'{api_data['total_fat_content']}',
-        'total_fibre_content': f'{api_data['total_fibre_content']}',
-        'total_carb_content': f'{api_data['total_carb_content']}',
-        'total_calories': f'{api_data['total_calories']/4.18}',
+        'total_protein_content': f'{calculated_nutritional_data['total_protein_content']}',
+        'total_fat_content': f'{calculated_nutritional_data['total_fat_content']}',
+        'total_fibre_content': f'{calculated_nutritional_data['total_fibre_content']}',
+        'total_carb_content': f'{calculated_nutritional_data['total_carb_content']}',
+        'total_calories': f'{calculated_nutritional_data['total_calories']/4.18}',
+
+        'total_vita_content':total_vita_content,
+        'total_vitc_content':total_vitc_content,
+        'total_vitd_content':total_vitd_content,
+        'total_vite_content':total_vite_content,
+        'total_vitk_content':total_vitk_content,
         
-        'unit_protein_content': f'{api_data['total_protein_content']/api_data['total_no_of_consumers']}',
-        'unit_fat_content': f'{api_data['total_fat_content']/api_data['total_no_of_consumers']}',
-        'unit_fibre_content': f'{api_data['total_fibre_content']/api_data['total_no_of_consumers']}',
-        'unit_carb_content': f'{api_data['total_carb_content']/api_data['total_no_of_consumers']}',
-        'unit_calories': f'{api_data['total_calories']/api_data['total_no_of_consumers']}',
-        'protcnt_nru' : f'{api_data['protcnt_nru']}',
-        'fatce_nru' : f'{api_data['fatce_nru']}',
-        'fibtg_nru' : f'{api_data['fibtg_nru']}',
-        'choavldf_nru' : f'{api_data['choavldf_nru']}',
+        'unit_protein_content': f'{calculated_nutritional_data['total_protein_content']/api_data['total_no_of_consumers']}',
+        'unit_fat_content': f'{calculated_nutritional_data['total_fat_content']/api_data['total_no_of_consumers']}',
+        'unit_fibre_content': f'{calculated_nutritional_data['total_fibre_content']/api_data['total_no_of_consumers']}',
+        'unit_carb_content': f'{calculated_nutritional_data['total_carb_content']/api_data['total_no_of_consumers']}',
+        'unit_calories': f'{calculated_nutritional_data['total_calories']/api_data['total_no_of_consumers']}',
+        'protcnt_nru' : f'{calculated_nutritional_data['protcnt_nru']}',
+        'fatce_nru' : f'{calculated_nutritional_data['fatce_nru']}',
+        'fibtg_nru' : f'{calculated_nutritional_data['fibtg_nru']}',
+        'choavldf_nru' : f'{calculated_nutritional_data['choavldf_nru']}',
         'enerc_nru' : f'kcal',
 
-        'total_fe_content':f'{api_data['total_fe_content']}',
-        'total_ca_content':f'{api_data['total_ca_content']}',
-        'total_mg_content':f'{api_data['total_mg_content']}',
-        'total_p_content':f'{api_data['total_p_content']}',
-        'iron_nru':f'{api_data['iron_nru']}',
-        'calcium_nru':f'{api_data['calcium_nru']}',
-        'magnesium_nru':f'{api_data['magnesium_nru']}',
-        'phosphorus_nru':f'{api_data['phosphorus_nru']}',
+        'total_fe_content':f'{calculated_nutritional_data['total_fe_content']}',
+        'total_ca_content':f'{calculated_nutritional_data['total_ca_content']}',
+        'total_mg_content':f'{calculated_nutritional_data['total_mg_content']}',
+        'total_p_content':f'{calculated_nutritional_data['total_p_content']}',
+        'iron_nru':f'{calculated_nutritional_data['iron_nru']}',
+        'calcium_nru':f'{calculated_nutritional_data['calcium_nru']}',
+        'magnesium_nru':f'{calculated_nutritional_data['magnesium_nru']}',
+        'phosphorus_nru':f'{calculated_nutritional_data['phosphorus_nru']}',
 
         'user': user_type,
         'item_cat_group': api_data['item_cat_group'],
